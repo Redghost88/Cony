@@ -22,4 +22,5 @@ from main import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.home, name='home'),
+    path("create_course/", views.create_course, name='create_course'),
 ]
