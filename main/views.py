@@ -1,9 +1,10 @@
 import uuid
 import requests
+from django.http import JsonResponse
 from django.shortcuts import render
-from gigachat import GigaChat
 
-from cony.settings import GIGACHAT_AUTH_TOKEN
+
+from main.ai_agent import chat
 
 
 # Create your views here.
@@ -13,11 +14,9 @@ def home(request):
 
 def create_course(request):
     context = {}
-    giga = GigaChat(
-        credentials=GIGACHAT_AUTH_TOKEN
-    )
-
-    response = giga.chat("Напиши 10 тем для изучения в питоне кратко")
-
-    context["answer"] = response.choices[0].message.content
     return render(request, 'create_course.html', context)
+
+def generate_answer(request):
+    question = request.GET.get('question', '')
+    context = {"answer": chat(question)}
+    return JsonResponse(context)

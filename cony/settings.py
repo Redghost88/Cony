@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-ox5(2%=bz_87tb_p0_+1y=&h@(5!3r3g07h*s4e4ar_72+q^f0'
-GIGACHAT_AUTH_TOKEN = config('GIGACHAT_KEY')
+OPEN_ROUTER_API_TOKEN = config('OPENROUTER_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 

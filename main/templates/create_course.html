@@ -5,6 +5,25 @@
 {% endblock %}
 
 {% block content %}
-Напишите запрос<br>
-{{ answer }}
+<form onsubmit="event.preventDefault(); generate_answer()">
+    <input id="question" type="text" name="question" placeholder="Введите текст" required>
+    <button type="submit">Сгенерировать курс</button>
+</form>
+<label id="answer_label">...</label>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function generate_answer(){
+        let question = document.getElementById("question").value
+        let req = new XMLHttpRequest()
+        url= `/generate_answer/?question=${encodeURIComponent(question)}`
+        req.open("GET", url, true)
+        req.onload = function(){
+            let data = JSON.parse(req.responseText)
+            document.getElementById("answer_label").innerHTML = data["answer"]
+        }
+        req.send()
+    }
+</script>
 {% endblock %}
