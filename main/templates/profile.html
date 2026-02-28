@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>profile</title>
+</head>
+<body>
+    <form method="post">
+        {% csrf_token %}
+        <img src="{{ post.image.url }}" alt="{{ post.title }}">
+     <button type="submit">Отправить</button>
+    </form>
+    <p> Username: {{ profile_user.username }}</p>
+    <p> Присоединился: {{ profile_user.date_joined }}</p>
+</body>
+</html>
