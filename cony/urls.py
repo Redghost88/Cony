@@ -16,6 +16,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from main.views import logout_view, start_view, start_reasons_view, start_descr_view, start_exp_view, start_aspect_view, \
+    start_aspect_frontend_view, start_aspect_backend_view, start_aspect_fullstack_view
+from django.contrib.auth import (views as auth_views)
 
 from main import views
 
@@ -23,5 +26,16 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.home, name='home'),
     path("create_course/", views.create_course, name='create_course'),
-    path("generate_answer/", views.generate_answer)
+    path("generate_answer/", views.generate_answer),
+    path('login/', auth_views.LoginView.as_view()),
+    path('logout/', logout_view),
+    path('start/main', start_view),
+    path('start/reasons', start_reasons_view),
+    path('start/descr', start_descr_view),
+    path('start/exp', start_exp_view),
+    path('start/aspect', start_aspect_view),
+    path('start/aspect/frontend', start_aspect_frontend_view),
+    path('start/aspect/backend', start_aspect_backend_view),
+    path('start/aspect/fullstack', start_aspect_fullstack_view),
+
 ]

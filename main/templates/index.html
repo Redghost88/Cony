@@ -7,4 +7,8 @@
 {% block content %}
 Главная страница<br>
 <a href="{% url 'create_course' %}"> Создать курс </a>
+
+{{ request.user }}
+<a href="/login/"> <button>  Войти </button> </a>
+<a href="/logout/"> <button> Выйти </button> </a>
 {% endblock %}
