@@ -5,11 +5,14 @@
     <title>profile</title>
 </head>
 <body>
-    <form method="post">
-        {% csrf_token %}
-        <img src="{{ post.image.url }}" alt="{{ post.title }}">
-     <button type="submit">Отправить</button>
+    <form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Загрузить аватарку</button>
     </form>
+
+
+    <img src="{{ user.profile.avatar.url }}" alt="Аватар">
     <p> Username: {{ profile_user.username }}</p>
     <p> Присоединился: {{ profile_user.date_joined }}</p>
 </body>
