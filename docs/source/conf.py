@@ -26,7 +26,7 @@ extensions = [
 project = 'Cony'
 copyright = '2026, Cony Team'
 author = 'Cony Team'
-release = '1.0'
+release = '1.1a'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
