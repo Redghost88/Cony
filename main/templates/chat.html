@@ -1,0 +1,58 @@
+<div class="chat-body">
+
+  <div class="chat-container">
+    <div class="chat-header">Cony chat</div>
+
+    <div class="chat-messages" id="messages">
+      <div class="message received">Привет! Как дела?</div>
+    </div>
+
+    <div class="chat-input-cont">
+
+      <form onsubmit="event.preventDefault(); sendMessage()">
+        <input class="chat-input" id="input" type="text" name="question" placeholder="Напиши сообщение..." autocomplete="off">
+        <button class="chat-button" type="submit">➤</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  const messages = document.getElementById("messages")
+  const input = document.getElementById("input")
+  let reply_count = 0
+
+  function sendMessage() {
+    const text = input.value.trim()
+    if (!text) return
+
+    // моё сообщение
+    const msg = document.createElement("div")
+    msg.className = "message sent"
+    msg.textContent = text
+    messages.appendChild(msg)
+
+    const reply = document.createElement("div")
+    reply.className = "message received"
+    reply.id = "reply" + reply_count
+    generate_answer(input.value, reply_count)
+    reply_count += 1
+    messages.appendChild(reply)
+    messages.scrollTop = messages.scrollHeight
+
+    input.value = ""
+    messages.scrollTop = messages.scrollHeight
+  }
+
+  function generate_answer(question, ans_id) {
+    let req = new XMLHttpRequest()
+    url = `/generate_answer/?question=${encodeURIComponent(question)}`
+    req.open("GET", url, true)
+    req.onload = function () {
+      let data = JSON.parse(req.responseText)
+      document.getElementById("reply" + ans_id).innerHTML = data["answer"]
+      document.getElementById("answer_label").innerHTML = ans_id
+    }
+    req.send()
+  }
+</script>
