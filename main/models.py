@@ -1,12 +1,14 @@
 """
 Файл отвечает, цитата "за модели"
 """
+
 from django.db import models
 from django.contrib.auth.models import User
 
+
 # Create your models here.
 class Course(models.Model):
-    """    Модель курса обучения.
+    """Модель курса обучения.
 
     Представляет учебный курс, созданный пользователем. Содержит информацию
     об авторе, названии и дате создания курса. Используется для организации
@@ -18,13 +20,15 @@ class Course(models.Model):
     :type title: CharField
     :ivar created_at: Дата и время создания курса (автоматически).
     :type created_at: DateTimeField
-"""
+    """
+
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=256, default="Курс")
     created_at = models.DateTimeField(auto_now_add=True)
 
+
 class Chapter(models.Model):
-    """    Модель главы курса.
+    """Модель главы курса.
 
     Представляет отдельную главу в рамках учебного курса. Содержит информацию
     о названии главы и связи с родительским курсом. Используется для структурирования
@@ -34,13 +38,14 @@ class Chapter(models.Model):
     :type course: ForeignKey to :class:`~courses.models.Course`
     :ivar title: Название главы (максимум 256 символов).
     :type title: CharField
-"""
+    """
+
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     title = models.CharField(max_length=256, default="Глава")
-    
+
 
 class Task(models.Model):
-    """    Представляет отдельную задачу в рамках главы учебного курса. Содержит информацию
+    """Представляет отдельную задачу в рамках главы учебного курса. Содержит информацию
     о названии, текстовом описании и статусе выполнения. Используется для организации
     практических заданий и отслеживания прогресса обучения.
 
@@ -52,6 +57,7 @@ class Task(models.Model):
     :type text: CharField
     :ivar decided: Статус выполнения задачи (True — выполнено, False — не выполнено).
     :type decided: BooleanField"""
+
     chapter = models.ForeignKey(Chapter, on_delete=models.CASCADE)
     title = models.CharField(max_length=256, default="Задача")
     text = models.CharField(max_length=4096, default="")
