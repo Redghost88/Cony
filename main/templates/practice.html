@@ -5,7 +5,9 @@
     <title>Title</title>
 </head>
 <body>
-    <form>
+    {% load static %}
+    <img src="{% static 'static/images/practice_picture.png' %}">
+    <form action="authorization">
         <button type="submit">Авторизироваться</button>
     </form>
 </body>

@@ -2,7 +2,7 @@ import uuid
 import requests
 from django.http import JsonResponse
 from django.shortcuts import render
-
+from django.contrib.auth.decorators import login_required
 
 from main.ai_agent import chat
 
@@ -24,7 +24,6 @@ def generate_answer(request):
     context = {"answer": chat(chat_request)}
     return JsonResponse(context)
 
-def practice(request, ):
-    context = {}
-    if ()
-        return render(request, 'registration.html',context)
+def practice(request):
+
+    return render(request, 'practice.html')
