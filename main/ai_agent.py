@@ -4,6 +4,18 @@ from cony.settings import OPEN_ROUTER_API_TOKEN
 from openai import OpenAI
 
 def chat(massage: str) -> str:
+    """
+        Отправляет запрос к AI-модели через OpenRouter API и возвращает ответ.
+
+        Инициализирует клиент OpenAI с базовым URL OpenRouter, отправляет сообщение
+        модели ``stepfun/step-3.5-flash:free`` и возвращает сгенерированный контент.
+
+        :param massage: Текст запроса пользователя.
+        :type massage: str
+        :return: Ответ от AI-модели в виде строки.
+        :rtype: str
+    """
+
     client = OpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=OPEN_ROUTER_API_TOKEN,
