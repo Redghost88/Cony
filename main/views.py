@@ -23,3 +23,8 @@ def generate_answer(request):
     chat_request = question + ". " + ". ".join(question_settings)
     context = {"answer": chat(chat_request)}
     return JsonResponse(context)
+
+def practice(request, ):
+    context = {}
+    if ()
+        return render(request, 'registration.html',context)
