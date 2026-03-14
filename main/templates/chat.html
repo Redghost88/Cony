@@ -1,5 +1,4 @@
 <div class="chat-body">
-
   <div class="chat-container">
     <div class="chat-header">Cony chat</div>
 
@@ -51,7 +50,6 @@
     req.onload = function () {
       let data = JSON.parse(req.responseText)
       document.getElementById("reply" + ans_id).innerHTML = data["answer"]
-      document.getElementById("answer_label").innerHTML = ans_id
     }
     req.send()
   }

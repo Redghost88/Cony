@@ -18,8 +18,5 @@ def create_course(request):
 
 def generate_answer(request):
     question = request.GET.get('question', '')
-    question_settings = ["Пиши как учитель", "Напиши только пункты для изучения и их краткое описание неболее 30 слов",
-    "Перед номером каждого пункта пиши '#####' а после сам номер"]
-    chat_request = question + ". " + ". ".join(question_settings)
-    context = {"answer": chat(chat_request)}
+    context = {"answer": chat(question)}
     return JsonResponse(context)

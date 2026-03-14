@@ -1,11 +1,20 @@
-chat-body {
-    font-family: Arial, sans-serif;
-    background: #f0f2f5;
-    margin: 0;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+.centered-block {
+    width: 75%;
+    max-width: 1200px;
+    /* чтобы на очень больших экранах не растягивался безумно */
+    min-width: 320px;
+    /* минимальная ширина на маленьких экранах */
+
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12),
+        0 4px 12px rgba(0, 0, 0, 0.08);
+
+    padding: 2.5rem;
+    margin: 2rem;
+
+    /* необязательно, но красиво */
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
 }
 
 .chat-container {
@@ -82,4 +91,84 @@ chat-body {
 
 .chat-button:hover {
     background: #006be6;
+}
+
+/* стили для карточек с тем что пользователь знал о технологии */
+
+#textInput {
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    outline: none;
+    transition: border-color 0.3s;
+    box-sizing: border-box;
+}
+
+#textInput:focus {
+    border-color: #4a90e2;
+}
+
+.hint {
+    color: #888;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.learn-technology-cards-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.learn-technology-card {
+    background-color: #4a90e2;
+    /* Однотонный синий цвет */
+    color: white;
+    padding: 8px 12px;
+    margin-top: 4px;
+    border-radius: 6px;
+    font-size: 13px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 200px;
+}
+
+.learn-technology-card-text {
+    word-break: break-word;
+    line-height: 1.3;
+}
+
+.delete-btn {
+    background: rgba(255, 255, 255, 0.3);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.delete-btn:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.empty-message {
+    color: #999;
+    text-align: center;
+    width: 100%;
+    padding: 30px;
+    font-size: 14px;
+    background: white;
+    border-radius: 6px;
 }
