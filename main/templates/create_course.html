@@ -45,7 +45,11 @@
     </form>
 </div>
 
-<div id="course_preview"></div>
+<form method="POST" action="/create_course/">
+    {% csrf_token %}
+    <div id="course_preview"></div>
+</form>
+
 
 {% endblock %}
 
@@ -99,13 +103,13 @@
         req.onload = function () {
             let data = JSON.parse(req.responseText)
             show_answer(data["answer"])
-
         }
         req.send()
     }
 
     function show_answer(answer) {
         course_preview.innerHTML = "<h2>План курса</h2>"
+        answer = answer.substring(answer.indexOf('#####'))
         let chapters = answer.split("#####")
         chapters.forEach(chapter => {
             if (chapter != "") {
@@ -113,12 +117,14 @@
                 chapter_cont.innerHTML = `
             <div class="card">
                 <div class="card-body">
-                    ${chapter}
+                    <label>${chapter}</label>
+                    <input type="hidden" name="chapter_name" value="${chapter}">
                 </div>
             </div>`
                 course_preview.appendChild(chapter_cont)
             }
         })
+        course_preview.innerHTML += `<button type="submit" class="btn btn-primary">Сохранить курс</button>`
     }
 
     // сохранить карточки
