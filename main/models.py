@@ -53,3 +53,10 @@ class Task(models.Model):
     title = models.CharField(max_length=256, default="Задача")
     text = models.CharField(max_length=4096, default="")
     decided = models.BooleanField(default=False)
+
+
+# Create your models here.
+
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    avatar = models.ImageField(upload_to='avatars/', default='default.jpg')
