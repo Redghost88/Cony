@@ -1,7 +1,8 @@
 import requests
 import json
-from cony.settings import OPEN_ROUTER_API_TOKEN
 from openai import OpenAI
+from cony.settings import OPEN_ROUTER_API_TOKEN
+
 
 def chat(massage: str) -> str:
     """
