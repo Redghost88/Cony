@@ -7,4 +7,19 @@
 {% block content %}
 Главная страница<br>
 <a href="{% url 'create_course' %}"> Создать курс </a>
+{% for course in courses %}
+<div class="col-md-6 mb-3">
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">{{ course.title }}</h5>
+            <div class="text-muted small mb-3">
+                Создал: {{ course.author }} | {{ course.created_at }}
+            </div>
+            <a href="/course/{{ course.id }}/" class="btn btn-primary btn-sm">
+                Перейти к голосованию
+            </a>
+        </div>
+    </div>
+</div>
+{% endfor %}
 {% endblock %}

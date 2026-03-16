@@ -17,6 +17,7 @@ from main.models import Profile
 # Create your views here.
 
 def home(request):
+    print("gggggg")
     """
     Отображает главную страницу приложения.
 
@@ -27,7 +28,11 @@ def home(request):
     :return: Объект HttpResponse с отрендеренным шаблоном 'index.html'.
     :rtype: HttpResponse
     """
-    return render(request, 'index.html')
+    context = {
+        "courses": Course.objects.all()
+    }
+    print(context)
+    return render(request, 'index.html', context)
 
 def create_course(request):
     """
@@ -57,7 +62,7 @@ def create_course(request):
             new_chapter.title = chapter
             new_chapter.save()
         
-        return render(request, 'index.html')
+        return redirect('home')
     context = {}
     return render(request, 'create_course.html', context)
 
