@@ -4,8 +4,9 @@ from django.http import JsonResponse
 
 from django.contrib.auth import authenticate, login, logout
 
-from cony.forms import LoginForm, RegisterForm, ProfileUpdateForm
+from cony.forms import LoginForm, RegisterForm
 from main.ai_agent import chat
+from main.forms import ProfileUpdateForm
 from main.models import Chapter, Course, Profile
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
@@ -17,7 +18,6 @@ from django.contrib.auth.models import User
 # Create your views here.
 
 def home(request):
-    print("gggggg")
     """
     Отображает главную страницу приложения.
 
@@ -31,7 +31,6 @@ def home(request):
     context = {
         "courses": Course.objects.all()
     }
-    print(context)
     return render(request, 'index.html', context)
 
 def create_course(request):

@@ -21,7 +21,7 @@
 
                 {% if request.user.is_authenticated %}
                 <li class="nav-item">
-                    <a class="nav-link" href="profile/">
+                    <a class="nav-link" href="/">
                         Профиль
                     </a>
                 </li>
@@ -32,12 +32,12 @@
                 </li>
                 {% else %}
                 <li class="nav-item">
-                    <a class="nav-link" href="login/">
+                    <a class="nav-link" href="/login/">
                         Войти
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="registration/">
+                    <a class="nav-link" href="/registration/">
                         Регистрация
                     </a>
                 </li>
