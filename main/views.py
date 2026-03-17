@@ -131,3 +131,11 @@ def registration(request):
             return redirect("home")
     context["form"] = RegisterForm()
     return render(request, 'registration.html', context)
+
+def course_page(request, id):
+    course = get_object_or_404(Course, id=id)
+    chapters = Chapter.objects.filter(course=course)
+    context = {
+        "chapters": chapters
+    }
+    return render(request, "course_page.html", context)

@@ -28,7 +28,8 @@ urlpatterns = [
     path('profile/<str:username>', views.profile, name='profile'),
     path("login/", views.user_login, name="login"),
     path("logout/", views.user_logout),
-    path("registration/", views.registration, name="registration")
+    path("registration/", views.registration, name="registration"),
+    path("course/<int:id>", views.course_page)
 ]
 
 if settings.DEBUG:
