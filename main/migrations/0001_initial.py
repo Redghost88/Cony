@@ -17,30 +17,30 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Course',
+            name="Course",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(default='Курс', max_length=256)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('author', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("title", models.CharField(default="Курс", max_length=256)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("author", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
         ),
         migrations.CreateModel(
-            name='Chapter',
+            name="Chapter",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(default='Глава', max_length=256)),
-                ('course', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='main.course')),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("title", models.CharField(default="Глава", max_length=256)),
+                ("course", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="main.course")),
             ],
         ),
         migrations.CreateModel(
-            name='Task',
+            name="Task",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(default='Задача', max_length=256)),
-                ('text', models.CharField(default='', max_length=4096)),
-                ('decided', models.BooleanField(default=False)),
-                ('chapter', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='main.chapter')),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("title", models.CharField(default="Задача", max_length=256)),
+                ("text", models.CharField(default="", max_length=4096)),
+                ("decided", models.BooleanField(default=False)),
+                ("chapter", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="main.chapter")),
             ],
         ),
     ]

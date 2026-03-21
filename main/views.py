@@ -1,7 +1,9 @@
-import uuid
-import requests
-from django.http import JsonResponse
+"""
+Отвечает за отображения страниц
+"""
 
+from django.http import JsonResponse
+from django.shortcuts import render
 from django.contrib.auth import authenticate, login, logout
 
 from cony.forms import LoginForm, RegisterForm
@@ -12,8 +14,6 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
 
 
-
-#from cony.settings import GIGACHAT_AUTH_TOKEN
 
 # Create your views here.
 
@@ -31,21 +31,21 @@ def home(request):
     context = {
         "courses": Course.objects.all()
     }
-    return render(request, 'index.html', context)
+    return render(request, "index.html", context)
 
 def create_course(request):
     """
-      Отображает страницу создания нового курса.
+    Отображает страницу создания нового курса.
 
-      Обрабатывает GET-запрос и возвращает отрендеренный шаблон формы создания курса.
-      При обработке POST-запроса (добавляется при реализации логики) выполняет валидацию
-      данных и создаёт новый объект :class:`~courses.models.Course`.
+    Обрабатывает GET-запрос и возвращает отрендеренный шаблон формы создания курса.
+    При обработке POST-запроса (добавляется при реализации логики) выполняет валидацию
+    данных и создаёт новый объект :class:`~courses.models.Course`.
 
-      :param request: Объект HTTP-запроса Django.
-      :type request: HttpRequest
-      :return: Объект HttpResponse с отрендеренным шаблоном 'create_course.html'.
-      :rtype: HttpResponse
-      """
+    :param request: Объект HTTP-запроса Django.
+    :type request: HttpRequest
+    :return: Объект HttpResponse с отрендеренным шаблоном 'create_course.html'.
+    :rtype: HttpResponse
+    """
     if request.method == "POST":
         chapters = request.POST.getlist('chapter_name')
 
@@ -60,10 +60,10 @@ def create_course(request):
             new_chapter.course = course
             new_chapter.title = chapter
             new_chapter.save()
-        
+
         return redirect('home')
     context = {}
-    return render(request, 'create_course.html', context)
+    return render(request, "create_course.html", context)
 
 def generate_answer(request):
     """
@@ -80,7 +80,7 @@ def generate_answer(request):
     :query string: Если параметр ``question`` отсутствует, используется пустая строка.
 
     """
-    question = request.GET.get('question', '')
+    question = request.GET.get("question", "")
     context = {"answer": chat(question)}
     return JsonResponse(context)
 
@@ -141,7 +141,7 @@ def course_page(request, id):
             "chapter": chapter,
             "tasks": Task.objects.filter(chapter=chapter)
         })
-    
+
     context = {
         "course": course,
         "chapters": chapters,

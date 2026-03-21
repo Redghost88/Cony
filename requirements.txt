@@ -20,3 +20,7 @@ typing-inspection==0.4.2
 typing_extensions==4.15.0
 urllib3==2.6.3
 openai==2.24.0
+pylint==4.0.5
+flake8==7.3.0
+pre_commit==4.5.1
+black==26.3.1

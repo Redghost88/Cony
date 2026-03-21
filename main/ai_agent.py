@@ -1,19 +1,20 @@
 import requests
 import json
-from cony.settings import OPEN_ROUTER_API_TOKEN
 from openai import OpenAI
+from cony.settings import OPEN_ROUTER_API_TOKEN
+
 
 def chat(massage: str) -> str:
     """
-        Отправляет запрос к AI-модели через OpenRouter API и возвращает ответ.
+    Отправляет запрос к AI-модели через OpenRouter API и возвращает ответ.
 
-        Инициализирует клиент OpenAI с базовым URL OpenRouter, отправляет сообщение
-        модели ``stepfun/step-3.5-flash:free`` и возвращает сгенерированный контент.
+    Инициализирует клиент OpenAI с базовым URL OpenRouter, отправляет сообщение
+    модели ``stepfun/step-3.5-flash:free`` и возвращает сгенерированный контент.
 
-        :param massage: Текст запроса пользователя.
-        :type massage: str
-        :return: Ответ от AI-модели в виде строки.
-        :rtype: str
+    :param massage: Текст запроса пользователя.
+    :type massage: str
+    :return: Ответ от AI-модели в виде строки.
+    :rtype: str
     """
 
     client = OpenAI(
@@ -24,12 +25,7 @@ def chat(massage: str) -> str:
     # First API call with reasoning
     response = client.chat.completions.create(
         model="stepfun/step-3.5-flash:free",
-        messages=[
-            {
-                "role": "user",
-                "content": massage
-            }
-        ],
+        messages=[{"role": "user", "content": massage}],
     )
 
     # Extract the assistant message with reasoning_details
