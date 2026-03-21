@@ -13,9 +13,9 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <div class="container mt-3">
-        {% include "header.html" %}
-
+    {% include "header.html" %}
+    <div style="padding-top: 56px;">
+        
         {% block content %}{% endblock %}
     </div>
 

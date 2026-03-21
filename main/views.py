@@ -136,6 +136,7 @@ def course_page(request, id):
     course = get_object_or_404(Course, id=id)
     chapters = Chapter.objects.filter(course=course)
     context = {
+        "course": course,
         "chapters": chapters
     }
     return render(request, "course_page.html", context)

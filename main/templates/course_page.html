@@ -4,21 +4,88 @@
 Курс
 {% endblock %}
 
-{% block content %}
 
-<div class="accordion accordion-flush" id="accordionFlushExample">
-    {% for chapter in chapters %}
-    <div class="accordion-item">
-        <h2 class="accordion-header">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                data-bs-target="#flush-collapse{{ chapter.id }}" aria-expanded="false" aria-controls="flush-collapse{{ chapter.id }}">
-                {{ chapter.title }}
-            </button>
-        </h2>
-        <div id="flush-collapse{{ chapter.id }}" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
-            <div class="accordion-body">Воруем стиль у stepik</div>
+{% block content %}
+<!-- Боковое меню -->
+<aside class="left-panel">
+    <div class="course-header">
+        <div class="logo">{{ course.title }}</div>
+        <div class="stats">Прогресс по курсу: 1/89</div>
+        <div class="progress-bar">
+            <div class="progress-fill"></div>
         </div>
     </div>
-    {% endfor %}
-</div>
+
+
+    <div class="accordion accordion-flush" id="accordionFlushExample">
+        {% for chapter in chapters %}
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="menu-item accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#flush-collapse{{ chapter.id }}" aria-expanded="false"
+                    aria-controls="flush-collapse{{ chapter.id }}">
+                    {{ chapter.title }}
+                </button>
+            </h2>
+            <div id="flush-collapse{{ chapter.id }}" class="accordion-collapse collapse"
+                data-bs-parent="#accordionFlushExample">
+                <div class="menu-item active" data-page="test">1.1 Входное тестирование</div>
+                <div class="menu-item" data-page="overview">1.2 Обзор курса</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</aside>
+
+<!-- Основной контент -->
+<main class="course-page-main">
+
+    <!-- Страница 1.1 -->
+    <div id="test" class="text-block content-page active">
+        <h2>Напишите программу на Python</h2>
+        <p>Описание: На вход программе подаётся список чисел через пробел...<br>
+            Необходимо определить самое часто встречаемое число...</p>
+
+        <textarea rows="15"></textarea>
+    </div>
+
+    <!-- Страница 1.2 -->
+    <div id="overview" class="text-block content-page">
+        <h2>Обзор курса</h2>
+        <p>В этом модуле вы познакомитесь с:</p>
+        <ul style="margin:16px 0 0 24px; line-height:1.6;">
+            <li>аыаываыафвыавыапмваы</li>
+            <li>мичсикивваиаивив</li>
+            <li>иуикувимсиквиа</li>
+            <li>ИКАЫМИВЫАсчломтдвлмтчст</li>
+            <li>мывмвыолмивововововововововов</li>
+        </ul>
+
+        <div style="margin-top:32px; padding:20px; background:gainsboro; border-radius:8px;">
+            <strong>Продолжительность модуля:</strong> ≈ 4–6 часов<br>
+            <strong>Количество шагов:</strong> 18<br>
+            <strong>Необходимые навыки:</strong> базовый Python
+        </div>
+    </div>
+</main>
+{% endblock %}
+{% block extra_js %}
+<script>
+    // Переключение страниц при клике на пункт меню
+    document.querySelectorAll('.menu-item[data-page]').forEach(item => {
+        item.addEventListener('click', () => {
+            // Убираем active со всех пунктов меню
+            document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+            // Добавляем active на кликнутый
+            item.classList.add('active');
+
+            // Скрываем все контентные блоки
+            document.querySelectorAll('.content-page').forEach(page => page.classList.remove('active'));
+
+            // Показываем нужную страницу
+            const pageId = item.getAttribute('data-page');
+            document.getElementById(pageId)?.classList.add('active');
+        });
+    });
+</script>
 {% endblock %}
