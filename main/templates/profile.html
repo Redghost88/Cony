@@ -1,10 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>profile</title>
-</head>
-<body>
+{% extends "base.html" %}
+
+{% block title %}
+Профиль
+{% endblock %}
+{% block content %}
     <form method="POST" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form.as_p }}
@@ -15,5 +14,4 @@
     <img src="{{ user.profile.avatar.url }}" alt="Аватар">
     <p> Username: {{ profile_user.username }}</p>
     <p> Присоединился: {{ profile_user.date_joined }}</p>
-</body>
-</html>
+{% endblock %}
