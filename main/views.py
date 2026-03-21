@@ -7,7 +7,7 @@ from django.contrib.auth import authenticate, login, logout
 from cony.forms import LoginForm, RegisterForm
 from main.ai_agent import chat
 from main.forms import ProfileUpdateForm
-from main.models import Chapter, Course, Profile
+from main.models import Chapter, Course, Profile, Task
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
 
@@ -135,8 +135,16 @@ def registration(request):
 def course_page(request, id):
     course = get_object_or_404(Course, id=id)
     chapters = Chapter.objects.filter(course=course)
+    chapter_with_tasks = []
+    for chapter in chapters:
+        chapter_with_tasks.append({
+            "chapter": chapter,
+            "tasks": Task.objects.filter(chapter=chapter)
+        })
+    
     context = {
         "course": course,
-        "chapters": chapters
+        "chapters": chapters,
+        "chapter_with_tasks": chapter_with_tasks
     }
     return render(request, "course_page.html", context)

@@ -18,19 +18,24 @@
 
 
     <div class="accordion accordion-flush" id="accordionFlushExample">
-        {% for chapter in chapters %}
+        {% for item in chapter_with_tasks %}
         <div class="accordion-item">
             <h2 class="accordion-header">
                 <button class="menu-item accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#flush-collapse{{ chapter.id }}" aria-expanded="false"
-                    aria-controls="flush-collapse{{ chapter.id }}">
-                    {{ chapter.title }}
+                    data-bs-target="#flush-collapse{{ item.chapter.id }}" aria-expanded="false"
+                    aria-controls="flush-collapse{{ item.chapter.id }}">
+                    {{ item.chapter.title }}
                 </button>
             </h2>
-            <div id="flush-collapse{{ chapter.id }}" class="accordion-collapse collapse"
+            <div id="flush-collapse{{ item.chapter.id }}" class="accordion-collapse collapse"
                 data-bs-parent="#accordionFlushExample">
                 <div class="menu-item active" data-page="test">1.1 Входное тестирование</div>
                 <div class="menu-item" data-page="overview">1.2 Обзор курса</div>
+                {% if item.tasks %}
+                {% for task in item.tasks %}
+                <div class="menu-item" data-page="task{{ task.id }}">{{ task.title }}</div>
+                {% endfor %}
+                {% endif %}
             </div>
         </div>
         {% endfor %}
@@ -67,6 +72,17 @@
             <strong>Необходимые навыки:</strong> базовый Python
         </div>
     </div>
+
+    {% for item in chapter_with_tasks %}
+    {% for task in item.tasks %}
+    <div id="task{{ task.id }}" class="text-block content-page">
+        <h2>{{ task.title }}</h2>
+        <p>{{ task.text }}</p>
+
+        <textarea rows="15"></textarea>
+    </div>
+    {% endfor %}
+    {% endfor %}
 </main>
 {% endblock %}
 {% block extra_js %}
