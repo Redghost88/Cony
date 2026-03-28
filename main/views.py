@@ -2,6 +2,8 @@
 Отвечает за отображения страниц
 """
 
+import json
+
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.contrib.auth import authenticate, login, logout
@@ -12,6 +14,7 @@ from main.forms import ProfileUpdateForm
 from main.models import Chapter, Course, Profile, Task
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
 
 
 
@@ -33,6 +36,7 @@ def home(request):
     }
     return render(request, "index.html", context)
 
+@login_required
 def create_course(request):
     """
     Отображает страницу создания нового курса.
@@ -53,17 +57,82 @@ def create_course(request):
         if request.user.is_authenticated:
             course.author = request.user
         course.title = "Курс"
+        course.technology = request.POST.get("technology")
         course.save()
+        chapter1 = create_chapter(course, chapters[0])
+        tasks = generate_tasks(chapters[0], course.technology)
+        for task in tasks:
+            new_task = Task()
+            new_task.chapter = chapter1
+            new_task.title = task["title"]
+            new_task.text = task["content"]
+            new_task.save()
+        
 
-        for chapter in chapters:
-            new_chapter = Chapter()
-            new_chapter.course = course
-            new_chapter.title = chapter
-            new_chapter.save()
+
+        for c in chapters[1:]:
+            create_chapter(course, c)
 
         return redirect('home')
     context = {}
     return render(request, "create_course.html", context)
+
+def create_chapter(course: Course, name: str) -> Chapter:
+    new_chapter = Chapter()
+    new_chapter.course = course
+    new_chapter.title = name
+    new_chapter.save()
+    return new_chapter
+
+def generate_tasks(chapter_name: str, technology: str) -> list:
+    """
+    - запросить у агента сделать текст с теорией и разбить ее на несколько подглав
+    - вернуть теюрию ввиде списка
+    """
+
+    prompt = """
+    Ты — профессиональный преподаватель и эксперт по созданию учебных материалов по программированию.
+
+    Пользователь передаёт тебе название главы курса и технологию, которая будет извучаться в курсе. Твоя задача — создать качественное теоретическое содержание для этой главы.
+
+    **Инструкции:**
+
+    1. Прочитай название главы курса.
+    2. Сгенерируй **5–8 отдельных логически завершённых блоков** теории по данной главе.
+    3. Каждый блок должен:
+    - Иметь чёткую тему и заголовок
+    - Быть самодостаточным (можно читать независимо от других блоков)
+    - Содержать объяснение ключевых понятий, принципов или аспектов темы
+    - Быть написан понятным, но профессиональным языком
+    - Иметь объём примерно 150–350 слов
+    - По теме блока можно будет дать задачу в которой пользователь применит новые знания
+
+    4. Структура ответа должна быть строго в следующем формате:
+
+    [
+    {
+        "title": "Заголовок первого блока",
+        "content": "Полный текст теоретического блока..."
+    },
+    {
+        "title": "Заголовок второго блока",
+        "content": "Полный текст теоретического блока..."
+    },
+    ...
+    ]
+
+    Важные правила:
+
+    1)Отвечай только массивом из словарей, без каких-либо дополнительных пояснений, приветствий или заключений.
+    2)Используй markdown внутри полей "content".
+    3)Все блоки должны быть на русском языке.
+    4)Содержание должно быть точным, структурированным и педагогически продуманным.
+    5)Избегай чрезмерно сложного жаргона, если это не обязательно для темы.
+    """
+
+    question = prompt + "\n Название главы:" + chapter_name + ", Название технологии:" + technology
+    answer = chat(question)
+    return json.loads(answer)
 
 def generate_answer(request):
     """

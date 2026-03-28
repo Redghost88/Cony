@@ -9,7 +9,7 @@
     <form onsubmit="event.preventDefault(); createRequest()">
         <div class="input-group mb-3">
             <label class="input-group-text" for="chooseTechnology">Технология для изучения</label>
-            <select class="form-select" id="chooseTechnology">
+            <select name="technology" class="form-select" id="chooseTechnology">
                 <option selected>Выберите...</option>
                 <option value="python">Python</option>
                 <option value="js">JavaScript</option>
@@ -79,15 +79,44 @@
         cards.forEach(card => {
             learnedThemes += card.textContent + ","
         })
+        
+        let prompt = `
+    Ты — профессиональный преподаватель и эксперт по созданию учебных материалов по программированию.
 
-        let course_request = `Создай курс по ${technology.value}. Я хочу разобраться в теме на ${choosedLevel}. `
+    Пользователь передаёт тебе технологию для изучения в курсе, желаемый уровень погружения в технологию, темы которые он уже знает. Твоя задача — написать названия глав для изучения технологии с учетом того что пользователь уже знает.
+
+    **Инструкции:**
+
+    1. Прочитай название технологии курса.
+    2. Сгенерируй 10-12 назвний для глав, каждое название длиной от 1 до 3 слов.
+    3. Не создавай вводные главы по типу "История", "Введение", а так же не создавай глав с инструкцией по установке технологии
+    4. Название главы не должно содержать нумерацию
+    5. Структура ответа должна быть строго в следующем формате:
+
+    \`
+    [
+    {
+        "title": "Название первой главы",
+    },
+    {
+        "title": "Название второй главы",
+    },
+    ...
+    ]
+
+    Важные правила:
+
+    1)Отвечай только JSON-массивом, без каких-либо дополнительных пояснений, приветствий или заключений.
+    2)Все блоки должны быть на русском языке.
+    3)Содержание должно быть точным, структурированным и педагогически продуманным.
+    4)Избегай чрезмерно сложного жаргона, если это не обязательно для темы.
+    \`
+    `
+
+        let course_request = prompt + "\n" + `Название технологии:${technology.value}. Уровень погружения:${choosedLevel}. `
         if (learnedThemes !== "") {
-            course_request += `Я уже знаю в этой технологии о ${learnedThemes}. `
+            course_request += `Изученые темы:${learnedThemes}. `
         }
-        if (task_wishes.value != "") {
-            course_request += `Хочу чтобы задачи были о ${task_wishes.value}.`
-        }
-        course_request += "Пиши как учитель, Напиши только главы для изучения и их краткое описание неболее 30 слов, Перед номером каждого главы пиши '#####' а после сам номер"
 
         generateCourse(course_request)
         course_preview.innerHTML = `
@@ -108,9 +137,9 @@
     }
 
     function show_answer(answer) {
-        course_preview.innerHTML = "<h2>План курса</h2>"
-        answer = answer.substring(answer.indexOf('#####'))
-        let chapters = answer.split("#####")
+        course_preview.innerHTML = "<h2>План курса</h2>" + `<input type="hidden" name="technology" value="${technology.value}">`
+        answer = JSON.parse(answer)
+        let chapters = answer.map(item => item.title)
         chapters.forEach(chapter => {
             if (chapter != "") {
                 let chapter_cont = document.createElement("div")
