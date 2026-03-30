@@ -21,22 +21,21 @@
     </div>
 
 
-    <div class="accordion accordion-flush" id="accordionFlushExample">
-        {% for item in chapter_with_tasks %}
-        <div class="accordion-item">
-            <h2 class="accordion-header">
-                <button class="menu-item accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#flush-collapse{{ item.chapter.id }}" aria-expanded="false"
-                    aria-controls="flush-collapse{{ item.chapter.id }}">
-                    {{ forloop.counter }} {{ item.chapter.title }}
+    <div>
+        {% for item in chapters %}
+        <div>
+            <h2>
+                <button type="button" class="btn btn-light">
+                    {{ forloop.counter }} {{ item.title }}
                 </button>
             </h2>
-            <div id="flush-collapse{{ item.chapter.id }}" class="accordion-collapse collapse"
-                data-bs-parent="#accordionFlushExample">
-                {% if item.tasks %}
-                {% for task in item.tasks %}
-                <div class="menu-item" data-page="task{{ task.id }}">{{ forloop.parentloop.counter }}.{{ forloop.counter }} {{ task.title }}</div>
+            <div>
+                {% if item == current_chapter %}
+                {% if tasks %}
+                {% for t in tasks %}
+                <div class="menu-item" data-page="task{{ t.id }}">{{ forloop.parentloop.counter }}.{{ forloop.counter }} {{ t.title }}</div>
                 {% endfor %}
+                {% endif %}
                 {% endif %}
             </div>
         </div>
@@ -46,15 +45,13 @@
 
 <!-- Основной контент -->
 <main class="course-page-main">
-    {% for item in chapter_with_tasks %}
-    {% for task in item.tasks %}
-    <div id="task{{ task.id }}" class="text-block content-page">
-        <h2>{{ task.title }}</h2>
-        <p>{{ task.text }}</p>
+    {% for t in tasks %}
+    <div id="task{{ t.id }}" class="text-block content-page">
+        <h2>{{ t.title }}</h2>
+        <p>{{ t.text|safe }}</p>
 
-        <textarea id="code-editor" name="code">{{ code_content }}</textarea>
+        <textarea id="code-editor{{ t.id }}" name="code"></textarea>
     </div>
-    {% endfor %}
     {% endfor %}
 </main>
 {% endblock %}
@@ -87,19 +84,22 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/matchbrackets.min.js"></script>
 
 <script>
-    var textarea = document.getElementById('code-editor');
-    var editor = CodeMirror.fromTextArea(textarea, {
-        lineNumbers: true,
-        theme: 'idea',
-        indentUnit: 4,
-        tabSize: 4,
-        lineWrapping: true,
-        gutters: ["CodeMirror-linenumbers"],
-        fixedGutter: true,
-        autoCloseBrackets: true,
-        matchBrackets: true,
-        mode: 'python',
-        viewportMargin: Infinity,
-    });
+    let tasks = {{ tasks|safe }}
+    for (const t of tasks) {
+        var textarea = document.getElementById('code-editor{{ t.id }}');
+        var editor = CodeMirror.fromTextArea(textarea, {
+            lineNumbers: true,
+            theme: 'idea',
+            indentUnit: 4,
+            tabSize: 4,
+            lineWrapping: true,
+            gutters: ["CodeMirror-linenumbers"],
+            fixedGutter: true,
+            autoCloseBrackets: true,
+            matchBrackets: true,
+            mode: 'python',
+            viewportMargin: Infinity,
+        });
+    }
 </script>
 {% endblock %}

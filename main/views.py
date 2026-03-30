@@ -124,10 +124,11 @@ def generate_tasks(chapter_name: str, technology: str) -> list:
     Важные правила:
 
     1)Отвечай только массивом из словарей, без каких-либо дополнительных пояснений, приветствий или заключений.
-    2)Используй markdown внутри полей "content".
+    2)Используй html тэги и bootstrap стили внутри полей "content".
     3)Все блоки должны быть на русском языке.
     4)Содержание должно быть точным, структурированным и педагогически продуманным.
     5)Избегай чрезмерно сложного жаргона, если это не обязательно для темы.
+    6)Не создавай задачи внутри полей "content".
     """
 
     question = prompt + "\n Название главы:" + chapter_name + ", Название технологии:" + technology
@@ -204,16 +205,14 @@ def registration(request):
 def course_page(request, id):
     course = get_object_or_404(Course, id=id)
     chapters = Chapter.objects.filter(course=course)
-    chapter_with_tasks = []
-    for chapter in chapters:
-        chapter_with_tasks.append({
-            "chapter": chapter,
-            "tasks": Task.objects.filter(chapter=chapter)
-        })
+    if course.current_chapter_number == 0:
+        course.current_chapter_number = chapters[0]
+    tasks = Task.objects.filter(chapter=course.current_chapter_number)
 
     context = {
         "course": course,
         "chapters": chapters,
-        "chapter_with_tasks": chapter_with_tasks
+        "current_chapter": course.current_chapter_number,
+        "tasks": tasks
     }
     return render(request, "course_page.html", context)
