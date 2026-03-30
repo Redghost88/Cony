@@ -255,3 +255,33 @@
     flex: 1;
     padding: 32px 40px;
 }
+
+    .CodeMirror * {
+        box-sizing: content-box;
+    }
+
+    .CodeMirror pre {
+        font-family: inherit;
+        font-size: inherit;
+        margin: 0;
+        padding: 0;
+    }
+
+    .CodeMirror-lines {
+        padding: 4px 0;
+    }
+
+    .CodeMirror-wrap pre {
+        word-wrap: break-word;
+        white-space: pre-wrap;
+        word-break: normal;
+    }
+
+    .CodeMirror-gutter {
+        width: 35px;
+        min-width: 35px;
+    }
+
+    .CodeMirror-sizer {
+        margin-left: 35px !important;
+    }

@@ -4,6 +4,10 @@
 Курс
 {% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/idea.min.css">
+{% endblock %}
 
 {% block content %}
 <!-- Боковое меню -->
@@ -48,7 +52,7 @@
         <h2>{{ task.title }}</h2>
         <p>{{ task.text }}</p>
 
-        <textarea rows="15"></textarea>
+        <textarea id="code-editor" name="code">{{ code_content }}</textarea>
     </div>
     {% endfor %}
     {% endfor %}
@@ -71,6 +75,31 @@
             const pageId = item.getAttribute('data-page');
             document.getElementById(pageId)?.classList.add('active');
         });
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/htmlmixed/htmlmixed.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/sql/sql.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closebrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/matchbrackets.min.js"></script>
+
+<script>
+    var textarea = document.getElementById('code-editor');
+    var editor = CodeMirror.fromTextArea(textarea, {
+        lineNumbers: true,
+        theme: 'idea',
+        indentUnit: 4,
+        tabSize: 4,
+        lineWrapping: true,
+        gutters: ["CodeMirror-linenumbers"],
+        fixedGutter: true,
+        autoCloseBrackets: true,
+        matchBrackets: true,
+        mode: 'python',
+        viewportMargin: Infinity,
     });
 </script>
 {% endblock %}
