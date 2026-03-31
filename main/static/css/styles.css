@@ -285,3 +285,8 @@
     .CodeMirror-sizer {
         margin-left: 35px !important;
     }
+
+.chapter-button {
+    padding: 10px 0px 10px 10px;
+    text-align: left;
+}

@@ -4,6 +4,7 @@
 
 import json
 
+from django.core.serializers import serialize
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.contrib.auth import authenticate, login, logout
@@ -208,11 +209,12 @@ def course_page(request, id):
     if course.current_chapter_number == 0:
         course.current_chapter_number = chapters[0]
     tasks = Task.objects.filter(chapter=course.current_chapter_number)
-
+    tasks_json = serialize('json', tasks)
     context = {
         "course": course,
         "chapters": chapters,
         "current_chapter": course.current_chapter_number,
-        "tasks": tasks
+        "tasks": tasks,
+        "tasks_json": tasks_json
     }
     return render(request, "course_page.html", context)
