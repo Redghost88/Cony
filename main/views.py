@@ -13,7 +13,7 @@ from django.contrib.auth import authenticate, login, logout
 from cony.forms import LoginForm, RegisterForm
 from main.ai_agent import chat
 from main.forms import ProfileUpdateForm
-from main.models import Chapter, Course, Profile, Task
+from main.models import Chapter, Course, Profile, Task, Test
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
@@ -241,12 +241,16 @@ def course_page(request, course_id, chapter_id, task_id):
     task = None
     if tasks:
         task = Task.objects.get(chapter=chapter, order=task_id)
+    tests = None
+    if task:
+        tests = Test.objects.filter(task=task)
     context = {
         "course": course,
         "chapters": chapters,
         "chapter": chapter,
         "tasks": tasks,
-        "task": task
+        "task": task,
+        "tests": tests
     }
     return render(request, "course_page.html", context)
 

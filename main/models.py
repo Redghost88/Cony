@@ -46,6 +46,7 @@ class Chapter(models.Model):
     order = models.IntegerField(default=0)
     current_task_number = models.IntegerField(default=0)
 
+
 class Task(models.Model):
     """Представляет отдельную задачу в рамках главы учебного курса. Содержит информацию
     о названии, текстовом описании и статусе выполнения. Используется для организации
@@ -65,6 +66,14 @@ class Task(models.Model):
     text = models.CharField(max_length=4096, default="")
     decided = models.BooleanField(default=False)
     order = models.IntegerField(default=0)
+    task_content = models.CharField(max_length=4096, default="")
+
+class Test(models.Model):
+    task = models.ForeignKey(Task, on_delete=models.PROTECT)
+    input_data = models.CharField(max_length=1024, default="")
+    output_data = models.CharField(max_length=1024, default="")
+    correct = models.BooleanField(default=False)
+
 
 # Create your models here.
 

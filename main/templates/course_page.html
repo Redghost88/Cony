@@ -49,10 +49,14 @@
     <div class="text-block">
         <h2>{{ task.title }}</h2>
         <p>{{ task.text|safe }}</p>
+        <p>{{ task.task_content|safe }}</p>
         <form onsubmit="event.preventDefault(); run_code()">
             <textarea id="code-editor" name="code"></textarea>
             <button type="submit" id="run-btn" class="btn btn-primary">Запустить код</button>
         </form>
+        {% for t in tests %}
+        <p>{{ t.input_data }} | {{ t.output_data }}</p>
+        {% endfor %}
     </div>
     {% endif %}
 </main>
@@ -85,7 +89,7 @@
         let code = document.getElementById("run-btn")
 
         let req = new XMLHttpRequest()
-        url = `/run_code/?question=${encodeURIComponent(question)}`
+        url = `/run_code/?code=${encodeURIComponent(question)}`
         req.open("GET", url, true)
         req.onload = function () {
             let data = JSON.parse(req.responseText)
