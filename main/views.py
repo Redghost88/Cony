@@ -249,3 +249,6 @@ def course_page(request, course_id, chapter_id, task_id):
         "task": task
     }
     return render(request, "course_page.html", context)
+
+def run_code():
+    pass

@@ -83,6 +83,15 @@
     });
     function run_code() {
         let code = document.getElementById("run-btn")
+
+        let req = new XMLHttpRequest()
+        url = `/run_code/?question=${encodeURIComponent(question)}`
+        req.open("GET", url, true)
+        req.onload = function () {
+            let data = JSON.parse(req.responseText)
+            show_answer(data["answer"])
+        }
+        req.send()
     }
 </script>
 {% endblock %}

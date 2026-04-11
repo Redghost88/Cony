@@ -32,6 +32,7 @@ urlpatterns = [
     path("logout/", views.user_logout),
     path("registration/", views.registration, name="registration"),
     path("course/<int:course_id>/chapter/<int:chapter_id>/task/<int:task_id>", views.course_page, name="course_page"),
+    path("run_code/", views.run_code)
 ]
 
 if settings.DEBUG:
