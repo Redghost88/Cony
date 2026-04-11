@@ -43,7 +43,8 @@ class Chapter(models.Model):
 
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     title = models.CharField(max_length=256, default="Глава")
-
+    order = models.IntegerField(default=0)
+    current_task_number = models.IntegerField(default=0)
 
 class Task(models.Model):
     """Представляет отдельную задачу в рамках главы учебного курса. Содержит информацию
@@ -63,6 +64,7 @@ class Task(models.Model):
     title = models.CharField(max_length=256, default="Задача")
     text = models.CharField(max_length=4096, default="")
     decided = models.BooleanField(default=False)
+    order = models.IntegerField(default=0)
 
 # Create your models here.
 

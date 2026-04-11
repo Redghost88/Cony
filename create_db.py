@@ -20,9 +20,9 @@ course = Course.objects.create(
 )
 
 # Главы
-chapter1 = Chapter.objects.create(course=course, title="Переменные")
-chapter2 = Chapter.objects.create(course=course, title="Условия")
-chapter3 = Chapter.objects.create(course=course, title="Циклы")
+chapter1 = Chapter.objects.create(course=course, title="Переменные", order=0)
+chapter2 = Chapter.objects.create(course=course, title="Условия", order=1)
+chapter3 = Chapter.objects.create(course=course, title="Циклы", order=2)
 
 # Задачи
 Task.objects.create(chapter=chapter1, title="Первые переменные", text=

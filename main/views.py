@@ -3,6 +3,7 @@
 """
 
 import json
+from asyncio import current_task
 
 from django.core.serializers import serialize
 from django.http import JsonResponse
@@ -32,8 +33,12 @@ def home(request):
     :return: Объект HttpResponse с отрендеренным шаблоном 'index.html'.
     :rtype: HttpResponse
     """
+    courses = []
+    for course in Course.objects.all():
+        courses.append([course, course.current_chapter_number, Chapter.objects.get(course=course, order=course.current_chapter_number).current_task_number])
+
     context = {
-        "courses": Course.objects.all()
+        "courses": courses
     }
     return render(request, "index.html", context)
 
@@ -60,28 +65,30 @@ def create_course(request):
         course.title = "Курс"
         course.technology = request.POST.get("technology")
         course.save()
-        chapter1 = create_chapter(course, chapters[0])
+        chapter1 = create_chapter(course, chapters[0], 0)
+        course.current_chapter = chapter1
         tasks = generate_tasks(chapters[0], course.technology)
-        for task in tasks:
+        chapter1.current_task = tasks[0]
+        for i in range(len(tasks)):
             new_task = Task()
             new_task.chapter = chapter1
-            new_task.title = task["title"]
-            new_task.text = task["content"]
+            new_task.title = tasks[i]["title"]
+            new_task.text = tasks[i]["content"]
+            new_task.order = i
             new_task.save()
-        
 
-
-        for c in chapters[1:]:
-            create_chapter(course, c)
+        for i in range(1, len(chapters)):
+            create_chapter(course, chapters[i], i)
 
         return redirect('home')
     context = {}
     return render(request, "create_course.html", context)
 
-def create_chapter(course: Course, name: str) -> Chapter:
+def create_chapter(course: Course, name: str, order: int) -> Chapter:
     new_chapter = Chapter()
     new_chapter.course = course
     new_chapter.title = name
+    new_chapter.order = order
     new_chapter.save()
     return new_chapter
 
@@ -203,18 +210,42 @@ def registration(request):
     context["form"] = RegisterForm()
     return render(request, 'registration.html', context)
 
-def course_page(request, id):
+"""def course_page(request, id):
     course = get_object_or_404(Course, id=id)
     chapters = Chapter.objects.filter(course=course)
     if course.current_chapter_number == 0:
         course.current_chapter_number = chapters[0]
-    tasks = Task.objects.filter(chapter=course.current_chapter_number)
+    current_chapter = course.current_chapter_number
+    tasks = Task.objects.filter(chapter=current_chapter)
+    if current_chapter.current_task_number == 0:
+        current_chapter.current_task_number = tasks[0]
     tasks_json = serialize('json', tasks)
     context = {
         "course": course,
         "chapters": chapters,
         "current_chapter": course.current_chapter_number,
         "tasks": tasks,
-        "tasks_json": tasks_json
+        "current_task": current_chapter.current_task_number
+    }
+    return render(request, "course_page.html", context)"""
+
+def course_page(request, course_id, chapter_id, task_id):
+    course = get_object_or_404(Course, id=course_id)
+    course.current_chapter_number = chapter_id
+    course.save()
+    chapters = Chapter.objects.filter(course=course)
+    chapter = Chapter.objects.get(course=course, order=chapter_id)
+    chapter.current_task_number = task_id
+    chapter.save()
+    tasks = Task.objects.filter(chapter=chapter)
+    task = None
+    if tasks:
+        task = Task.objects.get(chapter=chapter, order=task_id)
+    context = {
+        "course": course,
+        "chapters": chapters,
+        "chapter": chapter,
+        "tasks": tasks,
+        "task": task
     }
     return render(request, "course_page.html", context)

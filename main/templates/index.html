@@ -11,11 +11,12 @@
 <div class="col-md-6 mb-3">
     <div class="card">
         <div class="card-body">
-            <h5 class="card-title">{{ course.title }}</h5>
+            <h5 class="card-title">{{ course.0.title }}</h5>
             <div class="text-muted small mb-3">
-                Создал: {{ course.author }} | {{ course.created_at }}
+                Создал: {{ course.0.author }} | {{ course.0.created_at }}
             </div>
-            <a href="/course/{{ course.id }}" class="btn btn-primary btn-sm">
+            <a href="/course/{{ course.0.id }}/chapter/{{ course.1 }}/task/{{ course.2 }}"
+               class="btn btn-primary btn-sm">
                 Перейти к курсу
             </a>
         </div>

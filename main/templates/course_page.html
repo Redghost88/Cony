@@ -10,7 +10,6 @@
 {% endblock %}
 
 {% block content %}
-<!-- Боковое меню -->
 <aside class="left-panel">
     <div class="course-header">
         <div class="logo">{{ course.title }}</div>
@@ -20,20 +19,23 @@
         </div>
     </div>
 
-
     <div>
         {% for item in chapters %}
         <div>
             <div class="d-grid gap-2">
-                <button type="button" class="chapter-button">{{ forloop.counter }}. {{ item.title }}</button>
+                <a href="{% url 'course_page' course_id=course.id chapter_id=item.order task_id=item.current_task_number %}"
+                   class="btn btn-outline-primary">
+                    {{ forloop.counter }}. {{ item.title }}
+                </a>
             </div>
             <div>
-                {% if item == current_chapter %}
+                {% if item == chapter %}
                 {% if tasks %}
                 {% for t in tasks %}
-                <div class="menu-item" data-page="task{{ t.id }}">{{ forloop.parentloop.counter }}.{{ forloop.counter }}
-                    {{ t.title }}
-                </div>
+                <a href="{% url 'course_page' course_id=course.id chapter_id=item.order task_id=t.order %}"
+                   class="btn">
+                    {{ forloop.parentloop.counter }}.{{ forloop.counter }} {{ t.title }}
+                </a>
                 {% endfor %}
                 {% endif %}
                 {% endif %}
@@ -42,17 +44,17 @@
         {% endfor %}
     </div>
 </aside>
-
-<!-- Основной контент -->
 <main class="course-page-main">
-    {% for t in tasks %}
-    <div id="task{{ t.id }}" class="text-block content-page">
-        <h2>{{ t.title }}</h2>
-        <p>{{ t.text|safe }}</p>
-
-        <textarea id="code-editor{{ t.id }}" name="code"></textarea>
+    {% if task %}
+    <div class="text-block">
+        <h2>{{ task.title }}</h2>
+        <p>{{ task.text|safe }}</p>
+        <form onsubmit="event.preventDefault(); run_code()">
+            <textarea id="code-editor" name="code"></textarea>
+            <button type="submit" id="run-btn" class="btn btn-primary">Запустить код</button>
+        </form>
     </div>
-    {% endfor %}
+    {% endif %}
 </main>
 {% endblock %}
 {% block extra_js %}
@@ -65,150 +67,22 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closebrackets.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/matchbrackets.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-
-        let tasksData = {{ tasks_json|safe }};
-        const editors = {};
-
-        function initCodeMirror(textareaId) {
-            const textarea = document.getElementById(textareaId);
-            if (!textarea) {
-                return null;
-            }
-
-            if (textarea.nextElementSibling && textarea.nextElementSibling.classList &&
-                textarea.nextElementSibling.classList.contains('CodeMirror')) {
-                return null;
-            }
-
-            try {
-                const editor = CodeMirror.fromTextArea(textarea, {
-                    lineNumbers: true,
-                    theme: 'idea',
-                    indentUnit: 4,
-                    tabSize: 4,
-                    lineWrapping: true,
-                    gutters: ["CodeMirror-linenumbers"],
-                    fixedGutter: true,
-                    autoCloseBrackets: true,
-                    matchBrackets: true,
-                    mode: 'python',
-                    viewportMargin: Infinity,
-                });
-
-                editor.setSize(null, 400);
-
-                editor.refresh();
-
-                return editor;
-            } catch (error) {
-                console.error(`Ошибка при инициализации CodeMirror для ${textareaId}:`, error);
-                return null;
-            }
-        }
-
-        if (tasksData && tasksData.length > 0) {
-            tasksData.forEach(task => {
-                const textareaId = `code-editor-${task.id}`;
-                const editor = initCodeMirror(textareaId);
-                if (editor) {
-                    editors[task.id] = editor;
-                }
-            });
-        } else {
-            console.log('Нет данных о задачах');
-        }
-
-        const menuItems = document.querySelectorAll('.menu-item[data-page]');
-        console.log('Найдено пунктов меню:', menuItems.length);
-
-        const contentPages = document.querySelectorAll('.content-page');
-        console.log('Найдено контентных страниц:', contentPages.length);
-
-        function refreshCodeMirrorForPage(pageId) {
-            const page = document.getElementById(pageId);
-            if (page && page.classList.contains('active')) {
-                const textareas = page.querySelectorAll('textarea');
-                textareas.forEach(textarea => {
-                    if (textarea.nextElementSibling && textarea.nextElementSibling.classList &&
-                        textarea.nextElementSibling.classList.contains('CodeMirror')) {
-
-                        const editor = textarea.nextElementSibling.CodeMirror;
-                        if (editor && typeof editor.refresh === 'function') {
-                            setTimeout(() => editor.refresh(), 100);
-                            console.log('Обновлен редактор для:', textarea.id);
-                        }
-                    } else {
-
-                        const taskId = textarea.id.replace('code-editor-', '');
-                        const editor = initCodeMirror(textarea.id);
-                        if (editor) {
-                            editors[taskId] = editor;
-                        }
-                    }
-                });
-            }
-        }
-
-        if (menuItems.length === 0) {
-            console.warn('Не найдены элементы .menu-item[data-page]');
-        }
-
-        menuItems.forEach(item => {
-            item.addEventListener('click', function(e) {
-                e.preventDefault();
-                const pageId = this.getAttribute('data-page');
-                console.log('Клик по меню:', pageId);
-
-                document.querySelectorAll('.menu-item').forEach(el => {
-                    el.classList.remove('active');
-                });
-
-                this.classList.add('active');
-
-                document.querySelectorAll('.content-page').forEach(page => {
-                    page.classList.remove('active');
-                });
-
-                const targetPage = document.getElementById(pageId);
-                if (targetPage) {
-                    targetPage.classList.add('active');
-                    console.log('Активирована страница:', pageId);
-
-                    refreshCodeMirrorForPage(pageId);
-                } else {
-                    console.error('Страница с id="' + pageId + '" не найдена');
-                    const allPages = document.querySelectorAll('[id]');
-                    const pageIds = Array.from(allPages).map(el => el.id);
-                    console.log('Доступные id:', pageIds);
-                }
-            });
-        });
-
-        if (menuItems.length > 0 && !document.querySelector('.menu-item.active')) {
-            console.log('Активируем первую страницу');
-            menuItems[0].click();
-        } else if (menuItems.length === 0) {
-            const firstPage = document.querySelector('.content-page');
-            if (firstPage) {
-                firstPage.classList.add('active');
-                refreshCodeMirrorForPage(firstPage.id);
-            }
-        }
-
-        let resizeTimeout;
-        window.addEventListener('resize', function() {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(function() {
-                Object.values(editors).forEach(editor => {
-                    if (editor && typeof editor.refresh === 'function') {
-                        editor.refresh();
-                    }
-                });
-            }, 250);
-        });
-
-        console.log('Инициализация завершена');
+    const textarea = document.getElementById("code-editor");
+    const editor = CodeMirror.fromTextArea(textarea, {
+        lineNumbers: true,
+        theme: 'idea',
+        indentUnit: 4,
+        tabSize: 4,
+        lineWrapping: true,
+        gutters: ["CodeMirror-linenumbers"],
+        fixedGutter: true,
+        autoCloseBrackets: true,
+        matchBrackets: true,
+        mode: 'python',
+        viewportMargin: Infinity,
     });
+    function run_code() {
+        let code = document.getElementById("run-btn")
+    }
 </script>
 {% endblock %}
