@@ -1,257 +1,325 @@
+/* === ТЁМНАЯ ТЕМА ДЛЯ СТРАНИЦЫ КУРСА (исправлено перекрытие) === */
 :root {
-    --bg: #0f1117;
-    --left-panel-bg: #0a0c12;
-    --accent: #0084ff;
-    --green: #22c55e;
-    --border: #1e293b;
-    --card: #1a1f2e;
+  --bg-base: #0b0e14;
+  --bg-panel: #11161f;
+  --bg-card: #1a2230;
+  --bg-input: #1e2633;
+  --border-light: #2a3441;
+  --text-light: #f0f4fe;
+  --text-dim: #b0bed6;
+  --accent: #6c5ce7;
+  --accent-glow: #a688ff;
+  --progress: #00d2a1;
 }
 
-.text-block {
-    width: 75%;
-    max-width: 1200px;
-    /* чтобы на очень больших экранах не растягивался безумно */
-    min-width: 320px;
-    /* минимальная ширина на маленьких экранах */
-
-    background: white;
-    border-radius: 16px;
-    border: 1px solid var(--border);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12),
-        0 4px 12px rgba(0, 0, 0, 0.08);
-
-    padding: 2.5rem;
-    margin: 2rem;
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-.chat-container {
-    width: 380px;
-    height: 500px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+html, body {
+  background: var(--bg-base);
+  color: var(--text-light);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  margin: 0;
+  min-height: 100vh;
 }
 
-.chat-header {
-    background: #0084ff;
-    color: white;
-    padding: 14px;
-    text-align: center;
-    font-weight: bold;
+/* === ОБЩАЯ РАСКЛАДКА === */
+.course-wrapper {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+  flex-wrap: wrap; /* на всякий случай */
 }
 
-.chat-messages {
-    flex: 1;
-    padding: 16px;
-    overflow-y: auto;
-    background: white;
-}
-
-.message {
-    margin: 8px 0;
-    max-width: 80%;
-    padding: 10px 14px;
-    border-radius: 18px;
-    line-height: 1.4;
-    word-wrap: break-word;
-}
-
-.sent {
-    background: #dcf8c6;
-    margin-left: auto;
-    border-bottom-right-radius: 4px;
-}
-
-.received {
-    background: #0084ff;
-    margin-right: auto;
-    border-bottom-left-radius: 4px;
-}
-
-.chat-input-cont {
-    display: flex;
-    padding: 12px;
-    background: #f0f0f0;
-    border-top: 1px solid #ddd;
-}
-
-.chat-input {
-    flex: 1;
-    padding: 12px;
-    border: none;
-    border-radius: 24px;
-    outline: none;
-}
-
-.chat-button {
-    margin-left: 8px;
-    padding: 0 20px;
-    background: #0084ff;
-    color: white;
-    border: none;
-    border-radius: 24px;
-    cursor: pointer;
-}
-
-.chat-button:hover {
-    background: #006be6;
-}
-
-/* стили для карточек с тем что пользователь знал о технологии */
-
-#textInput {
-    width: 100%;
-    padding: 10px;
-    font-size: 14px;
-    border: 2px solid #e0e0e0;
-    border-radius: 6px;
-    outline: none;
-    transition: border-color 0.3s;
-    box-sizing: border-box;
-}
-
-#textInput:focus {
-    border-color: #4a90e2;
-}
-
-.hint {
-    color: #888;
-    font-size: 12px;
-    margin-top: 5px;
-}
-
-.learn-technology-cards-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.learn-technology-card {
-    background-color: #4a90e2;
-    /* Однотонный синий цвет */
-    color: white;
-    padding: 8px 12px;
-    margin-top: 4px;
-    border-radius: 6px;
-    font-size: 13px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    max-width: 200px;
-}
-
-.learn-technology-card-text {
-    word-break: break-word;
-    line-height: 1.3;
-}
-
-.delete-btn {
-    background: rgba(255, 255, 255, 0.3);
-    color: white;
-    border: none;
-    border-radius: 4px;
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-    font-size: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.2s;
-    padding: 0;
-    flex-shrink: 0;
-}
-
-.delete-btn:hover {
-    background: rgba(255, 255, 255, 0.5);
-}
-
-.empty-message {
-    color: #999;
-    text-align: center;
-    width: 100%;
-    padding: 30px;
-    font-size: 14px;
-    background: white;
-    border-radius: 6px;
-}
-
-/* стили для страницы курса */
-
+/* === БОКОВАЯ ПАНЕЛЬ === */
 .left-panel {
-    width: 280px;
-    background: var(--left-panel-bg);
-    border-right: 1px solid var(--border);
-    height: 100vh;
-    position: fixed;
-    overflow-y: auto;
-    padding: 16px 0;
+  width: 320px;
+  max-width: 100%;
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  overflow-y: auto;
+  flex-shrink: 0;   /* не сжиматься */
+  z-index: 5;       /* чтобы не перекрывать контент случайно */
 }
 
-.content-page {
-    display: none;
-}
-
-.content-page.active {
-    display: block;
-}
-
+/* Заголовок курса в панели */
 .course-header {
-    padding: 0 24px 24px;
+  padding: 1.8rem 1.5rem 1.2rem;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .logo {
-    font-size: 1.3rem;
-    font-weight: bold;
-    color: white;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 0.75rem;
+  line-height: 1.3;
+  word-break: break-word;
 }
 
 .stats {
-    color: white;
-    font-size: 0.95rem;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: 0.5rem;
 }
 
 .progress-bar {
-    height: 4px;
-    background: #334155;
-    border-radius: 2px;
-    overflow: hidden;
+  height: 6px;
+  background: var(--bg-input);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 6px;
 }
 
 .progress-fill {
-    height: 100%;
-    width: 1.1%;
-    background: var(--green);
+  height: 100%;
+  width: 1%; /* динамически изменится через JS или style */
+  background: linear-gradient(90deg, var(--accent), var(--progress));
+  border-radius: 10px;
+  box-shadow: 0 0 8px rgba(108, 92, 231, 0.6);
 }
 
+/* === АККОРДЕОН === */
+.accordion {
+  padding: 1rem 0.75rem;
+  flex: 1;
+}
+
+.accordion-item {
+  background: transparent;
+  border: none;
+  margin-bottom: 0.5rem;
+}
+
+.accordion-header {
+  margin: 0;
+}
+
+.accordion-button {
+  background: transparent !important;
+  color: var(--text-light) !important;
+  font-weight: 600;
+  padding: 0.9rem 1rem !important;
+  border-radius: 12px !important;
+  border: none !important;
+  box-shadow: none !important;
+  transition: all 0.2s;
+  font-size: 1rem;
+}
+
+.accordion-button:not(.collapsed) {
+  background: var(--bg-card) !important;
+  color: white !important;
+}
+
+.accordion-button:hover {
+  background: var(--bg-input) !important;
+}
+
+.accordion-button::after {
+  filter: brightness(0) invert(0.7);
+}
+
+.accordion-collapse {
+  background: transparent;
+}
+
+.accordion-body {
+  padding: 0.25rem 0 0.5rem 1.5rem;
+}
+
+/* Пункты меню (задачи) */
 .menu-item {
-    padding: 10px 24px;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all 0.15s;
-    user-select: none;
+  padding: 0.7rem 1rem 0.7rem 2.2rem;
+  color: var(--text-dim);
+  font-size: 0.95rem;
+  border-radius: 10px;
+  margin: 2px 0;
+  cursor: pointer;
+  transition: all 0.15s;
+  list-style: none;
+  font-weight: 500;
+  position: relative;
 }
 
-.menu-item:hover,
+.menu-item::before {
+  content: "○";
+  position: absolute;
+  left: 0.8rem;
+  color: var(--accent);
+  opacity: 0.6;
+  font-size: 0.8rem;
+}
+
+.menu-item:hover {
+  background: var(--bg-input);
+  color: white;
+}
+
 .menu-item.active {
-    background: rgb(243, 243, 243);
+  background: var(--accent);
+  color: white;
+  font-weight: 500;
+  box-shadow: 0 4px 10px rgba(108, 92, 231, 0.3);
 }
 
-.menu-item .badge {
-    float: right;
-    font-size: 0.75rem;
-    padding: 2px 8px;
-    border-radius: 12px;
-    background: #166534;
-    color: #86efac;
+.menu-item.active::before {
+  content: "●";
+  color: white;
+  opacity: 1;
 }
 
+/* === ОСНОВНОЙ КОНТЕНТ === */
 .course-page-main {
-    margin-left: 280px;
-    flex: 1;
-    padding: 32px 40px;
+  flex: 1;
+  min-width: 0;      /* позволяет тексту переноситься и не вылезать за границы */
+  padding: 2.5rem 3rem;
+  background: var(--bg-base);
+  overflow-y: auto;
+  height: 100vh;
+  z-index: 1;
+}
+
+/* Страницы контента */
+.content-page {
+  display: none;
+  animation: fade 0.25s ease;
+}
+
+.content-page.active {
+  display: block;
+}
+
+@keyframes fade {
+  from { opacity: 0.5; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.text-block {
+  background: var(--bg-card);
+  border-radius: 24px;
+  padding: 2.2rem;
+  border: 1px solid var(--border-light);
+  box-shadow: 0 15px 30px -10px rgba(0,0,0,0.5);
+  max-width: 100%;
+  margin: 0;
+  word-wrap: break-word;
+}
+
+.text-block h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: white;
+  letter-spacing: -0.01em;
+}
+
+.text-block p {
+  color: var(--text-dim);
+  line-height: 1.7;
+  margin-bottom: 1.8rem;
+}
+
+/* Текстовое поле */
+textarea {
+  width: 100%;
+  background: var(--bg-input) !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: 16px !important;
+  padding: 1.2rem !important;
+  color: #e3e9f5 !important;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  transition: border 0.2s;
+}
+
+textarea:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.2) !important;
+}
+
+.info-box {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: var(--bg-input);
+  border-radius: 18px;
+  border-left: 4px solid var(--accent);
+  color: var(--text-light);
+}
+
+.info-box strong {
+  color: white;
+}
+
+ul {
+  color: var(--text-dim);
+  padding-left: 1.8rem;
+}
+
+li {
+  margin-bottom: 0.5rem;
+}
+
+/* Скроллбар */
+.left-panel::-webkit-scrollbar {
+  width: 5px;
+}
+.left-panel::-webkit-scrollbar-thumb {
+  background: var(--border-light);
+  border-radius: 10px;
+}
+
+/* === АДАПТИВНОСТЬ (исправляет перекрытие на узких экранах) === */
+@media (max-width: 800px) {
+  .course-wrapper {
+    flex-direction: column;
+  }
+
+  .left-panel {
+    width: 100%;
+    height: auto;
+    max-height: 40vh;
+    position: relative;
+    border-right: none;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .course-page-main {
+    height: auto;
+    min-height: 60vh;
+    padding: 1.8rem 1.5rem;
+    margin-left: 500px;
+  }
+}
+
+@media (max-width: 480px) {
+  .text-block {
+    padding: 1.5rem;
+    margin-left: 500px;
+  }
+
+  .text-block h2 {
+    font-size: 1.6rem;
+    margin-left: 500px;
+  }
+
+  .course-page-main {
+    padding: 1.2rem;
+    margin-left: 500px;
+  }
+}
+
+main{
+    margin-left: 300px;
 }
