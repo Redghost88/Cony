@@ -54,6 +54,7 @@
             <textarea id="code-editor" name="code"></textarea>
             <button type="submit" id="run-btn" class="btn btn-primary">Запустить код</button>
         </form>
+        <textarea id="code-output" disabled="disabled"></textarea>
         {% for t in tests %}
         <p>{{ t.input_data }} | {{ t.output_data }}</p>
         {% endfor %}
@@ -72,6 +73,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/matchbrackets.min.js"></script>
 <script>
     const textarea = document.getElementById("code-editor");
+    const code_output = document.getElementById("code-output")
     const editor = CodeMirror.fromTextArea(textarea, {
         lineNumbers: true,
         theme: 'idea',
@@ -86,14 +88,12 @@
         viewportMargin: Infinity,
     });
     function run_code() {
-        let code = document.getElementById("run-btn")
-
         let req = new XMLHttpRequest()
-        url = `/run_code/?code=${encodeURIComponent(question)}`
+        url = `/run_code/?code=${encodeURIComponent(editor.getValue())}`
         req.open("GET", url, true)
         req.onload = function () {
             let data = JSON.parse(req.responseText)
-            show_answer(data["answer"])
+            code_output.innerHTML = data["output"]
         }
         req.send()
     }

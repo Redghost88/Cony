@@ -3,6 +3,7 @@
 """
 
 import json
+import subprocess
 from asyncio import current_task
 
 from django.core.serializers import serialize
@@ -210,25 +211,6 @@ def registration(request):
     context["form"] = RegisterForm()
     return render(request, 'registration.html', context)
 
-"""def course_page(request, id):
-    course = get_object_or_404(Course, id=id)
-    chapters = Chapter.objects.filter(course=course)
-    if course.current_chapter_number == 0:
-        course.current_chapter_number = chapters[0]
-    current_chapter = course.current_chapter_number
-    tasks = Task.objects.filter(chapter=current_chapter)
-    if current_chapter.current_task_number == 0:
-        current_chapter.current_task_number = tasks[0]
-    tasks_json = serialize('json', tasks)
-    context = {
-        "course": course,
-        "chapters": chapters,
-        "current_chapter": course.current_chapter_number,
-        "tasks": tasks,
-        "current_task": current_chapter.current_task_number
-    }
-    return render(request, "course_page.html", context)"""
-
 def course_page(request, course_id, chapter_id, task_id):
     course = get_object_or_404(Course, id=course_id)
     course.current_chapter_number = chapter_id
@@ -254,5 +236,15 @@ def course_page(request, course_id, chapter_id, task_id):
     }
     return render(request, "course_page.html", context)
 
-def run_code():
-    pass
+def run_code(request):
+    code = request.GET.get("code", "")
+    code_timeout = 5
+
+    try:
+        process = subprocess.run(["python", "-c", code], capture_output=True, text=True, timeout=code_timeout)
+        output = process.stdout if process.stdout else process.stderr
+        return JsonResponse({"output": output})
+    except subprocess.TimeoutExpired:
+        return JsonResponse({'error': f"Превышено время выполнения программы ({code_timeout} секунд)"})
+    except Exception as e:
+        return JsonResponse({'error': str(e)})
