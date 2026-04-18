@@ -1,44 +1,64 @@
-on:
-  push:
-    - workflows: [python-ci-workflow]
-      filter:
-        branches: ["master"]
+image: python:3.13.3-alpine3.20
 
-workflows:
-  python-ci-workflow:
-    tasks:
-      - name: code-quality-check
-        cubes:
-          - name: setup-python
-            image: docker.io/library/python:3.11
-            script:
-              - python -m pip install --upgrade pip
-              - pip install -r requirements.txt
-          
-          - name: check-black-formatting
-            script:
-              - python -m black --check --diff cony/ main/ docs/
-          
-          - name: check-flake8
-            script:
-              - python -m flake8 cony/ main/ --max-line-length=88
-          
-          - name: run-pylint
-            script:
-              - python -m pylint cony/ main/ --fail-under=7.0
-          
-          - name: check-django-migrations
-            script:
-              - python manage.py makemigrations --check --dry-run
-          
-          - name: generate-documentation
-            script:
-              - cd docs
-              - make html
-              - echo "Documentation generated successfully"
-          
-          - name: check-documentation-build
-            script:
-              - cd docs
-              - python -m sphinx -b html source build
-              - echo "Documentation build check passed"
+before_script:
+  - pip install -r requirements-dev.txt
+
+stages:
+  - style
+  - test
+  - coverage
+  - documentation
+
+pylint:
+  stage: style
+  script:
+    - pylint --fail-under=6 --ignore-paths="docs/*" **/*.py 
+    - echo "Pylint complete."
+  artifacts:
+    untracked: false
+    when: on_success
+    expire_in: 30 days
+
+pycodestyle:
+    stage: style
+    script:
+        - pycodestyle --max-line-length=120 main.py
+        - echo "Pycodestyle complete."
+    artifacts:
+        untracked: false
+        when: on_failure
+        expire_in: 30 days
+
+unittest:
+    stage: test
+    script:
+        - python -m unittest tests.py
+    artifacts:
+        untracked: false
+        when: on_failure
+        expire_in: 30 days
+
+coverage:
+  stage: coverage
+  script:
+    - echo "Generating coverage report"
+    - coverage run -m unittest tests.py
+    - coverage report -m
+    - coverage html
+  artifacts:
+    paths:
+      - htmlcov/
+    expire_in: 30 days
+  coverage: '/TOTAL\s+\d+\s+\d+\s+(\d+%)/'
+
+sphinx:
+  stage: documentation
+  script:
+    - apk add --no-cache make
+    - echo "Building documentation with Sphinx..."
+    - cd docs
+    - make html
+  artifacts:
+    paths:
+      - docs/build/
+    expire_in: 30 days
