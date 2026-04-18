@@ -50,9 +50,7 @@ class Migration(migrations.Migration):
                 ("check_log", models.TextField(blank=True)),
                 (
                     "task",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, to="main.task"
-                    ),
+                    models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="main.task"),
                 ),
                 (
                     "user",

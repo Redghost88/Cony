@@ -18,8 +18,9 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "cony.settings")
 django.setup()
 extensions = [
     "sphinx.ext.autodoc",
-    "sphinx.ext.napoleon",
-    "sphinx.ext.viewcode",
+    "sphinx.ext.napoleon",  # Поддержка Google/NumPy docstring'ов
+    "sphinx.ext.viewcode",  # Ссылки на исходный код
+    "sphinx_autodoc_typehints",  # Красивый вывод аннотаций типов
 ]
 
 project = "Cony"
@@ -29,7 +30,13 @@ release = "1.1a"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
+autodoc_member_order = "bysource"
 
+autodoc_default_options = {
+    "members": True,
+    "undoc-members": True,
+    "show-inheritance": True,
+}
 
 templates_path = ["_templates"]
 exclude_patterns = []
