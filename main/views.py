@@ -5,20 +5,25 @@
 import json
 import subprocess
 from asyncio import current_task
+from email.policy import default
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.serializers import serialize
+from django.core.serializers.json import DjangoJSONEncoder
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.contrib.auth import authenticate, login, logout
+from django.utils.html import strip_tags
+from django.views.decorators.http import require_http_methods
 
 from cony.forms import LoginForm, RegisterForm
 from main.ai_agent import chat
+from main.code_checker import check_attempt
 from main.forms import ProfileUpdateForm
-from main.models import Chapter, Course, Profile, Task, Test
+from main.models import Chapter, Course, Profile, Task, Test, Theory, Attempt
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
-
 
 
 # Create your views here.
@@ -36,12 +41,14 @@ def home(request):
     """
     courses = []
     for course in Course.objects.all():
-        courses.append([course, course.current_chapter_number, Chapter.objects.get(course=course, order=course.current_chapter_number).current_task_number])
+        courses.append([course, course.current_chapter_number,
+                        Chapter.objects.get(course=course, order=course.current_chapter_number).current_theory_number])
 
     context = {
         "courses": courses
     }
     return render(request, "index.html", context)
+
 
 @login_required
 def create_course(request):
@@ -68,15 +75,15 @@ def create_course(request):
         course.save()
         chapter1 = create_chapter(course, chapters[0], 0)
         course.current_chapter = chapter1
-        tasks = generate_tasks(chapters[0], course.technology)
-        chapter1.current_task = tasks[0]
-        for i in range(len(tasks)):
-            new_task = Task()
-            new_task.chapter = chapter1
-            new_task.title = tasks[i]["title"]
-            new_task.text = tasks[i]["content"]
-            new_task.order = i
-            new_task.save()
+        theory_blocks = generate_theory(chapters[0], course.technology)
+        chapter1.current_theory_number = theory_blocks[0]
+        for i in range(len(theory_blocks)):
+            new_theory = Theory()
+            new_theory.chapter = chapter1
+            new_theory.title = theory_blocks[i]["title"]
+            new_theory.text = theory_blocks[i]["content"]
+            new_theory.order = i
+            new_theory.save()
 
         for i in range(1, len(chapters)):
             create_chapter(course, chapters[i], i)
@@ -84,6 +91,7 @@ def create_course(request):
         return redirect('home')
     context = {}
     return render(request, "create_course.html", context)
+
 
 def create_chapter(course: Course, name: str, order: int) -> Chapter:
     new_chapter = Chapter()
@@ -93,7 +101,8 @@ def create_chapter(course: Course, name: str, order: int) -> Chapter:
     new_chapter.save()
     return new_chapter
 
-def generate_tasks(chapter_name: str, technology: str) -> list:
+
+def generate_theory(chapter_name: str, technology: str) -> list:
     """
     - запросить у агента сделать текст с теорией и разбить ее на несколько подглав
     - вернуть теюрию ввиде списка
@@ -144,6 +153,91 @@ def generate_tasks(chapter_name: str, technology: str) -> list:
     answer = chat(question)
     return json.loads(answer)
 
+
+@require_http_methods(["POST"])
+def generate_tasks(request) -> JsonResponse:
+    request_body = json.loads(request.body)
+    technology = request_body.get("technology")
+    theory = Theory.objects.get(id=int(request_body.get("theory")))
+    task = Task.objects.get(id=int(request_body.get("task")))
+
+    if task.is_generated:
+        Test.objects.filter(task=task).delete()
+
+    prompt = f"""
+    Ты — профессиональный методист онлайн-курсов по программированию. 
+    Твоя задача — создавать одну качественную практическую задачу, которая идеально закрепляет материал, пройденный в блоке теории.
+    
+    Создай **одну** задачу на основе следующего блока теории:
+    
+    **Язык программирования:** {technology}
+    
+    **Название блока теории:** {theory.title}
+    
+    **Содержание блока теории:** 
+    {strip_tags(theory.text)}
+    
+    Дополнительные требования:
+    - Задача должна полностью отрабатывать материал из этого блока теории.
+    - Не должна требовать знаний, которые ещё не были пройдены.
+    - Должна быть интересной и с небольшим реальным контекстом.
+    - Уровень сложности должен соответствовать уровню блока (не слишком простой и не слишком сложный).
+    - Обязательно напиши 4 примера входа/выхода."""
+
+    structure = """
+    Структура ответа должна быть строго в следующем формате:
+
+    [
+    {
+        "title": "Название задачи",
+        "content": "подробное и понятное описание задачи на русском языке",
+        "input_data": "формат ввода",
+        "output_data": "что должна вернуть программа"
+    },
+    [
+        ["пример входных данных первого теста", "пример выходных данных первого теста"],
+        ["пример входных данных второго теста", "пример выходных данных второго теста"],
+        ...
+    ],
+    ]
+    
+    Важные правила:
+
+    1)Отвечай только массивом из словарей, без каких-либо дополнительных пояснений, приветствий или заключений.
+    2)Используй html тэги и bootstrap стили внутри полей "content".
+    3)Все блоки должны быть на русском языке.
+    4)Содержание должно быть точным, структурированным и педагогически продуманным.
+    5)Избегай чрезмерно сложного жаргона, если это не обязательно для темы.
+    6)В поле "content" не пиши формат для входных и выходных данных
+    7)Не пиши решение задачи. Только задачу.
+    8)В полях input_data и output_data пиши только описание формата входных и выходных данных и их ограничений
+    """
+    question = prompt + structure
+    answer = json.loads(chat(question))
+    task_info = answer[0]
+    tests_info = answer[1]
+    task.title = task_info["title"]
+    task.task_content = task_info["content"]
+    task.input_data = task_info["input_data"]
+    task.output_data = task_info["output_data"]
+    task.is_generated = True
+    task.save()
+    response = {
+        "task_title": task.title,
+        "task_text": task.task_content,
+        "input_data": task.input_data,
+        "output_data": task.output_data,
+        "tests": []
+    }
+    tests = []
+    for i in range(len(tests_info)):
+        test = Test.objects.create(task=task, input_data=tests_info[i][0], output_data=tests_info[i][1], order=i)
+        tests.append({"input_data": test.input_data, "output_data": test.output_data})
+    response["tests"] = tests
+
+    return JsonResponse(response)
+
+
 def generate_answer(request):
     """
     Обрабатывает GET-запрос с параметром ``question``, добавляет системные инструкции
@@ -163,6 +257,7 @@ def generate_answer(request):
     context = {"answer": chat(question)}
     return JsonResponse(context)
 
+
 def profile(request, username):
     user = get_object_or_404(User, username=username)
     profile_instance, created = Profile.objects.get_or_create(user=request.user)
@@ -181,6 +276,7 @@ def profile(request, username):
     }
     return render(request, "profile.html", context)
 
+
 def user_login(request):
     context = {}
     if request.method == "POST":
@@ -196,9 +292,11 @@ def user_login(request):
     context["form"] = LoginForm()
     return render(request, "login.html", context)
 
+
 def user_logout(request):
     logout(request)
     return redirect("login")
+
 
 def registration(request):
     context = {}
@@ -211,6 +309,7 @@ def registration(request):
     context["form"] = RegisterForm()
     return render(request, 'registration.html', context)
 
+@login_required
 def course_page(request, course_id, chapter_id, task_id):
     course = get_object_or_404(Course, id=course_id)
     course.current_chapter_number = chapter_id
@@ -219,27 +318,42 @@ def course_page(request, course_id, chapter_id, task_id):
     chapter = Chapter.objects.get(course=course, order=chapter_id)
     chapter.current_task_number = task_id
     chapter.save()
-    tasks = Task.objects.filter(chapter=chapter)
+    theory_blocks = Theory.objects.filter(chapter=chapter)
+    theory = None
+    if theory_blocks:
+        theory = Theory.objects.get(chapter=chapter, order=task_id)
     task = None
-    if tasks:
-        task = Task.objects.get(chapter=chapter, order=task_id)
     tests = None
+    if theory:
+        try:
+            task = Task.objects.get(user=request.user, theory=theory)
+            tests = Test.objects.filter(task=task)
+        except ObjectDoesNotExist:
+            task = Task.objects.create(theory=theory, user=request.user)
+    attempts = []
     if task:
-        tests = Test.objects.filter(task=task)
+        try:
+            attempts = Attempt.objects.filter(task=task)
+        except ObjectDoesNotExist:
+            attempts = []
+
     context = {
         "course": course,
         "chapters": chapters,
         "chapter": chapter,
-        "tasks": tasks,
+        "theory_blocks": theory_blocks,
+        "theory": theory,
         "task": task,
-        "tests": tests
+        "tests": tests,
+        "attempts": json.dumps(list(attempts[:5].values()), default=str),
     }
     return render(request, "course_page.html", context)
 
-def run_code(request):
-    code = request.GET.get("code", "")
-    code_timeout = 5
 
+@require_http_methods(["POST"])
+def run_code(request):
+    code = json.loads(request.body)
+    code_timeout = 5
     try:
         process = subprocess.run(["python", "-c", code], capture_output=True, text=True, timeout=code_timeout)
         output = process.stdout if process.stdout else process.stderr
@@ -248,3 +362,16 @@ def run_code(request):
         return JsonResponse({'error': f"Превышено время выполнения программы ({code_timeout} секунд)"})
     except Exception as e:
         return JsonResponse({'error': str(e)})
+
+@require_http_methods(["POST"])
+def check_code(request):
+    code = json.loads(request.body)["source_code"]
+    task_id = int(json.loads(request.body)["task_id"])
+    task = Task.objects.get(id=task_id)
+    attempt = Attempt.objects.create(task=task, user=request.user, source_code=code)
+    check_attempt(attempt)
+    if attempt.passed:
+        task.decided = True
+        task.save(update_fields=["decided"])
+    attempts = Attempt.objects.filter(task=task)
+    return JsonResponse({"attempts": json.dumps(list(attempts[:5].values()), default=str)})

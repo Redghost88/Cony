@@ -1,101 +1,201 @@
 {% extends "base.html" %}
 
 {% block title %}
-Курс
+    Курс
 {% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/idea.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/idea.min.css">
 {% endblock %}
 
 {% block content %}
-<aside class="left-panel">
-    <div class="course-header">
-        <div class="logo">{{ course.title }}</div>
-        <div class="stats">Прогресс по курсу: 1/89</div>
-        <div class="progress-bar">
-            <div class="progress-fill"></div>
+    <aside class="left-panel">
+        <div class="course-header">
+            <div class="logo">{{ course.title }}</div>
+            <div class="stats">Прогресс по курсу: 1/89</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
         </div>
-    </div>
 
-    <div>
-        {% for item in chapters %}
         <div>
-            <div class="d-grid gap-2">
-                <a href="{% url 'course_page' course_id=course.id chapter_id=item.order task_id=item.current_task_number %}"
-                   class="btn btn-outline-primary">
-                    {{ forloop.counter }}. {{ item.title }}
-                </a>
-            </div>
-            <div>
-                {% if item == chapter %}
-                {% if tasks %}
-                {% for t in tasks %}
-                <a href="{% url 'course_page' course_id=course.id chapter_id=item.order task_id=t.order %}"
-                   class="btn">
-                    {{ forloop.parentloop.counter }}.{{ forloop.counter }} {{ t.title }}
-                </a>
-                {% endfor %}
-                {% endif %}
-                {% endif %}
-            </div>
+            {% for item in chapters %}
+                <div>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'course_page' course_id=course.id chapter_id=item.order task_id=item.current_theory_number %}"
+                           class="btn btn-outline-primary">
+                            {{ forloop.counter }}. {{ item.title }}
+                        </a>
+                    </div>
+                    <div>
+                        {% if item == chapter %}
+                            {% if theory_blocks %}
+                                {% for t in theory_blocks %}
+                                    <a href="{% url 'course_page' course_id=course.id chapter_id=item.order task_id=t.order %}"
+                                       class="btn">
+                                        {{ forloop.parentloop.counter }}.{{ forloop.counter }} {{ t.title }}
+                                    </a>
+                                {% endfor %}
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
         </div>
-        {% endfor %}
-    </div>
-</aside>
-<main class="course-page-main">
-    {% if task %}
-    <div class="text-block">
-        <h2>{{ task.title }}</h2>
-        <p>{{ task.text|safe }}</p>
-        <p>{{ task.task_content|safe }}</p>
-        <form onsubmit="event.preventDefault(); run_code()">
-            <textarea id="code-editor" name="code"></textarea>
-            <button type="submit" id="run-btn" class="btn btn-primary">Запустить код</button>
-        </form>
-        <textarea id="code-output" disabled="disabled"></textarea>
-        {% for t in tests %}
-        <p>{{ t.input_data }} | {{ t.output_data }}</p>
-        {% endfor %}
-    </div>
-    {% endif %}
-</main>
+    </aside>
+    <main class="course-page-main">
+        {% if theory %}
+            <div class="text-block">
+                <h2>{{ theory.title }}</h2>
+                <p>{{ theory.text|safe }}</p>
+            </div>
+            <div class="row">
+                <div class="text-block col">
+                    <form onsubmit="event.preventDefault(); generate_task()">
+                        <button type="submit" id="run-btn" class="btn btn-primary">Сгенерировать задачу</button>
+                    </form>
+                    <h3 id="task-title"></h3>
+                    <p id="task-text"></p>
+                    <div class="text-block">
+                        <div class="example-item">
+                            <h5>Формат ввода</h5>
+                            <p id="task-input"></p> <br>
+                            <h5>Формат вывода</h5>
+                            <p id="task-output"></p>
+                            <h5>Пример данных</h5>
+                            <p id="io-example"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-block col">
+
+                    <meta id="csrf-token" content="{{ csrf_token }}">
+                    <textarea id="code-editor" name="code"></textarea>
+                    <div class="row">
+                        <div class="col">
+                            <form onsubmit="event.preventDefault(); send_code()">
+                                <button type="submit" class="btn btn-success">▶ Отправить код</button>
+                            </form>
+                        </div>
+                        <div class="col">
+                            <form onsubmit="event.preventDefault(); run_code()">
+                                <button type="submit" id="run-btn" class="btn btn-primary">Протестировать код</button>
+                                <br>
+                            </form>
+                            <textarea id="code-output" disabled="disabled"></textarea>
+                        </div>
+                    </div>
+                    <p id="attempt-results"></p>
+                </div>
+            </div>
+
+        {% endif %}
+    </main>
 {% endblock %}
 {% block extra_js %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/htmlmixed/htmlmixed.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/sql/sql.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closebrackets.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/matchbrackets.min.js"></script>
-<script>
-    const textarea = document.getElementById("code-editor");
-    const code_output = document.getElementById("code-output")
-    const editor = CodeMirror.fromTextArea(textarea, {
-        lineNumbers: true,
-        theme: 'idea',
-        indentUnit: 4,
-        tabSize: 4,
-        lineWrapping: true,
-        gutters: ["CodeMirror-linenumbers"],
-        fixedGutter: true,
-        autoCloseBrackets: true,
-        matchBrackets: true,
-        mode: 'python',
-        viewportMargin: Infinity,
-    });
-    function run_code() {
-        let req = new XMLHttpRequest()
-        url = `/run_code/?code=${encodeURIComponent(editor.getValue())}`
-        req.open("GET", url, true)
-        req.onload = function () {
-            let data = JSON.parse(req.responseText)
-            code_output.innerHTML = data["output"]
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/htmlmixed/htmlmixed.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/sql/sql.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/matchbrackets.min.js"></script>
+    <script>
+        const task_title = document.getElementById("task-title")
+        const task_text_cont = document.getElementById("task-text")
+        const task_input = document.getElementById("task-input")
+        const task_output = document.getElementById("task-output")
+        const task_io_example = document.getElementById("io-example")
+        const csrf_token = document.getElementById("csrf-token")
+        const textarea = document.getElementById("code-editor")
+        const code_output = document.getElementById("code-output")
+        const attempt_results = document.getElementById("attempt-results")
+        const editor = CodeMirror.fromTextArea(textarea, {
+            lineNumbers: true,
+            theme: 'idea',
+            indentUnit: 4,
+            tabSize: 4,
+            lineWrapping: true,
+            gutters: ["CodeMirror-linenumbers"],
+            fixedGutter: true,
+            autoCloseBrackets: true,
+            matchBrackets: true,
+            mode: 'python',
+            viewportMargin: Infinity,
+        });
+        const task_generated = "{{ task.is_generated }}"
+
+
+        document.addEventListener("DOMContentLoaded", function () {
+            task_title.innerHTML = '{{ task.title|escapejs|safe }}'
+            task_text_cont.innerHTML = '{{ task.task_content|escapejs|safe }}'
+            task_input.innerHTML = '{{ task.input_data|escapejs|safe }}'
+            task_output.innerHTML = '{{ task.output_data|escapejs|safe }}'
+            task_io_example.innerHTML = '{{ tests.0.input_data }} | {{ tests.0.output_data }}'
+            show_attemts('{{ attempts|escapejs }}')
+            if (task_generated == "False") {
+                generate_task()
+            }
+        })
+
+        function generate_task() {
+            fetch("/generate_task/", {
+                method: "POST",
+                headers: {"Content-Type": "application/json", "X-CSRFToken": csrf_token.getAttribute("content")},
+                body: JSON.stringify({
+                    "technology": "{{ course.technology }}",
+                    "theory": "{{ theory.id }}",
+                    "task": "{{ task.id }}"
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data["task_text"])
+                    task_title.innerHTML = String(data["task_title"] || "")
+                    task_text_cont.innerHTML = String(data["task_text"] || "")
+                    task_input.innerHTML = String(data["input_data"] || "")
+                    task_output.innerHTML = String(data["output_data"] || "")
+                    task_io_example.innerHTML = String(data["tests"][0]["input_data"] + " | " + data["tests"][0]["output_data"] || "")
+                })
         }
-        req.send()
-    }
-</script>
+
+        function run_code() {
+            fetch("/run_code/", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json", "X-CSRFToken": csrf_token.getAttribute("content")},
+                    body: JSON.stringify(editor.getValue())
+                },
+            )
+                .then(response => response.json())
+                .then(data => {
+                    code_output.innerHTML = data.output
+                })
+        }
+
+        function show_attemts(attempts) {
+            attempt_results.innerHTML = ''
+            for(const a of JSON.parse(attempts)) {
+                attempt_results.innerHTML += `<hr>
+    <p>Время: ${a.created_at} — </p>
+    <pre>${a.source_code}</pre>
+    <pre>${a.check_log}</pre>`
+            }
+        }
+
+        function send_code() {
+            fetch("/send_code/", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json", "X-CSRFToken": csrf_token.getAttribute("content")},
+                    body: JSON.stringify({"source_code": editor.getValue(), "task_id": "{{ task.id }}"})
+                },
+            )
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data.attempts)
+                    show_attemts(data.attempts)
+                })
+        }
+    </script>
 {% endblock %}

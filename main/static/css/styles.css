@@ -8,7 +8,7 @@
 }
 
 .text-block {
-    width: 75%;
+    width: 100%;
     max-width: 1200px;
     /* чтобы на очень больших экранах не растягивался безумно */
     min-width: 320px;
@@ -21,7 +21,7 @@
         0 4px 12px rgba(0, 0, 0, 0.08);
 
     padding: 2.5rem;
-    margin: 2rem;
+    margin: 1rem;
 }
 
 .chat-container {

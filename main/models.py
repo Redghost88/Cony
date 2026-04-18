@@ -1,5 +1,5 @@
 """
-Файл отвечает, цитата "за модели"
+Файл отвечает, за модели
 """
 
 from django.db import models
@@ -43,13 +43,13 @@ class Chapter(models.Model):
 
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     title = models.CharField(max_length=256, default="Глава")
-    order = models.IntegerField(default=0)
-    current_task_number = models.IntegerField(default=0)
+    order = models.PositiveSmallIntegerField(default=0)
+    current_theory_number = models.IntegerField(default=0)
 
 
-class Task(models.Model):
-    """Представляет отдельную задачу в рамках главы учебного курса. Содержит информацию
-    о названии, текстовом описании и статусе выполнения. Используется для организации
+class Theory(models.Model):
+    """Представляет отдельную блок теории в рамках главы учебного курса. Содержит информацию
+    о названии, текстовом описании. Используется для организации
     практических заданий и отслеживания прогресса обучения.
 
     :ivar chapter: Ссылка на родительскую главу.
@@ -64,19 +64,39 @@ class Task(models.Model):
     chapter = models.ForeignKey(Chapter, on_delete=models.CASCADE)
     title = models.CharField(max_length=256, default="Задача")
     text = models.CharField(max_length=4096, default="")
+    order = models.PositiveSmallIntegerField(default=0)
+
+class Task(models.Model):
+    theory = models.ForeignKey(Theory, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    title = models.CharField(max_length=256, default="Задача")
+    task_content = models.CharField(max_length=4096, null=True, default="")
+    input_data = models.CharField(max_length=4096, default="")
+    output_data = models.CharField(max_length=4096, default="")
     decided = models.BooleanField(default=False)
-    order = models.IntegerField(default=0)
-    task_content = models.CharField(max_length=4096, default="")
+    is_generated = models.BooleanField(default=False)
 
 class Test(models.Model):
     task = models.ForeignKey(Task, on_delete=models.PROTECT)
     input_data = models.CharField(max_length=1024, default="")
     output_data = models.CharField(max_length=1024, default="")
     correct = models.BooleanField(default=False)
+    order = models.PositiveSmallIntegerField(default=0)
 
-
-# Create your models here.
+    class Meta:
+        ordering = ['order', 'id']
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     avatar = models.ImageField(upload_to='avatars/', default='default.jpg')
+
+class Attempt(models.Model):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    source_code = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    passed = models.BooleanField(default=False)
+    check_log = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
