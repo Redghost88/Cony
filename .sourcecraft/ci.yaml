@@ -1,0 +1,44 @@
+on:
+  push:
+    - workflows: [python-ci-workflow]
+      filter:
+        branches: ["master"]
+
+workflows:
+  python-ci-workflow:
+    tasks:
+      - name: code-quality-check
+        cubes:
+          - name: setup-python
+            image: docker.io/library/python:3.11
+            script:
+              - python -m pip install --upgrade pip
+              - pip install -r requirements.txt
+          
+          - name: check-black-formatting
+            script:
+              - python -m black --check --diff cony/ main/ docs/
+          
+          - name: check-flake8
+            script:
+              - python -m flake8 cony/ main/ --max-line-length=88
+          
+          - name: run-pylint
+            script:
+              - python -m pylint cony/ main/ --fail-under=7.0
+          
+          - name: check-django-migrations
+            script:
+              - python manage.py makemigrations --check --dry-run
+          
+          - name: generate-documentation
+            script:
+              - cd docs
+              - make html
+              - echo "Documentation generated successfully"
+          
+          - name: check-documentation-build
+            script:
+              - cd docs
+              - python -m sphinx -b html source build
+              - echo "Documentation build check passed"
