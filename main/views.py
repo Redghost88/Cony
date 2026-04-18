@@ -211,6 +211,7 @@ def generate_tasks(request) -> JsonResponse:
     6)В поле "content" не пиши формат для входных и выходных данных
     7)Не пиши решение задачи. Только задачу.
     8)В полях input_data и output_data пиши только описание формата входных и выходных данных и их ограничений
+    9)Не пиши такой текст который будет вызывать ошибку JSON.parse в javascript
     """
     question = prompt + structure
     answer = json.loads(chat(question))

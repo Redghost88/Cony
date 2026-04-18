@@ -96,10 +96,10 @@
     \`
     [
     {
-        "title": "Название первой главы",
+        "title": "Название первой главы"
     },
     {
-        "title": "Название второй главы",
+        "title": "Название второй главы"
     },
     ...
     ]
@@ -138,6 +138,8 @@
 
     function show_answer(answer) {
         course_preview.innerHTML = "<h2>План курса</h2>" + `<input type="hidden" name="technology" value="${technology.value}">`
+        answer = answer.replace(/,(\s*[}\]])/g, '$1')
+        console.log(answer)
         answer = JSON.parse(answer)
         let chapters = answer.map(item => item.title)
         chapters.forEach(chapter => {
