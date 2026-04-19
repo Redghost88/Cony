@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}
-    Курс
+Курс
 {% endblock %}
 
 {% block extra_css %}
@@ -24,7 +24,7 @@
                 <div>
                     <div class="d-grid gap-2">
                         <a href="{% url 'course_page' course_id=course.id chapter_id=item.order task_id=item.current_theory_number %}"
-                           class="btn btn-outline-primary">
+                           class="menu-item btn btn-outline-primary">
                             {{ forloop.counter }}. {{ item.title }}
                         </a>
                     </div>

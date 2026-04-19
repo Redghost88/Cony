@@ -103,11 +103,6 @@ def create_chapter(course: Course, name: str, order: int) -> Chapter:
 
 
 def generate_theory(chapter_name: str, technology: str) -> list:
-    """
-    - запросить у агента сделать текст с теорией и разбить ее на несколько подглав
-    - вернуть теюрию ввиде списка
-    """
-
     prompt = """
     Ты — профессиональный преподаватель и эксперт по созданию учебных материалов по программированию.
 
