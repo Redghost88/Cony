@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
 {% block title %}
-Курс
+    Курс
 {% endblock %}
 
 {% block extra_css %}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/idea.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/dracula.min.css">
 {% endblock %}
 
 {% block content %}
@@ -47,7 +47,9 @@
     <main class="course-page-main">
         {% if theory %}
             <div class="text-block">
-                <h2>{{ theory.title }}</h2>
+                <h2>{{ theory.title }}
+                    {% if task.decided %}✅{% endif %}
+                </h2>
                 <p>{{ theory.text|safe }}</p>
             </div>
             <div class="row">
@@ -89,9 +91,19 @@
                     <p id="attempt-results"></p>
                 </div>
             </div>
-
+            {% include "chat.html" %}
+        {% else %}
+            <form method="post" action="/add_new_theory/">
+                {% csrf_token %}
+                <div style="display: none;">
+                    <input type="hidden" name="chapter" value="{{ chapter.id }}">
+                    <input type="hidden" name="course" value="{{ course.id }}">
+                </div>
+                <button class="btn btn-primary">Сгенерировать теорию</button>
+            </form>
         {% endif %}
-        {% include "chat.html" %}
+
+
     </main>
 {% endblock %}
 {% block extra_js %}
@@ -115,7 +127,7 @@
         const attempt_results = document.getElementById("attempt-results")
         const editor = CodeMirror.fromTextArea(textarea, {
             lineNumbers: true,
-            theme: 'idea',
+            theme: 'dracula',
             indentUnit: 4,
             tabSize: 4,
             lineWrapping: true,
@@ -177,7 +189,7 @@
 
         function show_attemts(attempts) {
             attempt_results.innerHTML = ''
-            for(const a of JSON.parse(attempts)) {
+            for (const a of JSON.parse(attempts)) {
                 attempt_results.innerHTML += `<hr>
     <p>Время: ${a.created_at} — </p>
     <pre>${a.source_code}</pre>

@@ -7,7 +7,7 @@ import subprocess
 from asyncio import current_task
 from email.policy import default
 
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.core.serializers import serialize
 from django.core.serializers.json import DjangoJSONEncoder
 from django.http import JsonResponse
@@ -136,12 +136,16 @@ def generate_theory(chapter_name: str, technology: str) -> list:
 
     Важные правила:
 
-    1)Отвечай только массивом из словарей, без каких-либо дополнительных пояснений, приветствий или заключений.
+    1)Верни ответ строго в формате JSON без дополнительного текста. 
+    Используй ТОЛЬКО двойные кавычки " для JSON. 
+    Экранируй кавычки внутри HTML: используй &quot; или \\\". 
+    Не добавляй пояснений, только JSON.
     2)Используй html тэги и bootstrap стили внутри полей "content".
-    3)Все блоки должны быть на русском языке.
+    3)Весь текст на русском языке.
     4)Содержание должно быть точным, структурированным и педагогически продуманным.
     5)Избегай чрезмерно сложного жаргона, если это не обязательно для темы.
     6)Не создавай задачи внутри полей "content".
+    7)Не используй классы меняющие цвет заднего фона на светлый
     """
 
     question = prompt + "\n Название главы:" + chapter_name + ", Название технологии:" + technology
@@ -257,6 +261,7 @@ def generate_answer(request):
 def profile(request, username):
     user = get_object_or_404(User, username=username)
     profile_instance, created = Profile.objects.get_or_create(user=request.user)
+    count_of_decided_tasks = Task.objects.filter(user=request.user, decided=True).count()
 
     if request.method == 'POST':
         form = ProfileUpdateForm(request.POST, request.FILES, instance=profile_instance)
@@ -269,6 +274,7 @@ def profile(request, username):
     context = {
         "profile_user": user,
         "form": form,
+        "count_of_decided_tasks": count_of_decided_tasks
     }
     return render(request, "profile.html", context)
 
@@ -315,6 +321,11 @@ def course_page(request, course_id, chapter_id, task_id):
     chapter.current_task_number = task_id
     chapter.save()
     theory_blocks = Theory.objects.filter(chapter=chapter)
+    for i in range(len(theory_blocks)):
+        theory_same_order = Theory.objects.filter(chapter=chapter, order=task_id)
+        if len(theory_same_order) > 1:
+            for t in theory_same_order[1:]:
+                t.delete()
     theory = None
     if theory_blocks:
         theory = Theory.objects.get(chapter=chapter, order=task_id)
@@ -330,6 +341,7 @@ def course_page(request, course_id, chapter_id, task_id):
     if task:
         try:
             attempts = Attempt.objects.filter(task=task)
+            attempts = json.dumps(list(attempts[:5].values()), default=str)
         except ObjectDoesNotExist:
             attempts = []
 
@@ -341,7 +353,7 @@ def course_page(request, course_id, chapter_id, task_id):
         "theory": theory,
         "task": task,
         "tests": tests,
-        "attempts": json.dumps(list(attempts[:5].values()), default=str),
+        "attempts": attempts,
     }
     return render(request, "course_page.html", context)
 
@@ -371,3 +383,21 @@ def check_code(request):
         task.save(update_fields=["decided"])
     attempts = Attempt.objects.filter(task=task)
     return JsonResponse({"attempts": json.dumps(list(attempts[:5].values()), default=str)})
+
+@require_http_methods(["POST"])
+def add_new_theory(request):
+    chapter_id = int(request.POST.get("chapter"))
+    course_id = int(request.POST.get("course"))
+    chapter = Chapter.objects.get(id=chapter_id)
+    course = Course.objects.get(id=course_id)
+    theory_blocks = generate_theory(chapter.title, course.technology)
+    chapter.current_theory_number = 0
+    for i in range(len(theory_blocks)):
+        new_theory = Theory()
+        new_theory.chapter = chapter
+        new_theory.title = theory_blocks[i]["title"]
+        new_theory.text = theory_blocks[i]["content"]
+        new_theory.order = i
+        new_theory.save()
+    chapter.save(update_fields=["current_theory_number"])
+    return redirect('course_page', course_id=course_id, chapter_id=chapter.order, task_id=chapter.current_theory_number)

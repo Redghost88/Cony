@@ -10,8 +10,9 @@
     <button type="submit">Загрузить аватарку</button>
     </form>
 
-
     <img src="{{ user.profile.avatar.url }}" alt="Аватар">
     <p> Username: {{ profile_user.username }}</p>
     <p> Присоединился: {{ profile_user.date_joined }}</p>
+
+    <p>Количество решенных задач: {{ count_of_decided_tasks }}</p>
 {% endblock %}

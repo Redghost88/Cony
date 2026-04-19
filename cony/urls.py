@@ -35,6 +35,7 @@ urlpatterns = [
     path("run_code/", views.run_code),
     path("send_code/", views.check_code),
     path("generate_task/", views.generate_tasks),
+    path("add_new_theory/", views.add_new_theory)
 ]
 
 if settings.DEBUG:
