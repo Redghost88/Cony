@@ -26,6 +26,10 @@ html, body {
   font-family: 'Segoe UI', system-ui, sans-serif;
 }
 
+input {
+    var(--bg-base);
+}
+
 .text-block {
   background: var(--bg-card);
   border-radius: 16px;

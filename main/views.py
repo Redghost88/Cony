@@ -25,6 +25,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 
+from main.prompts import STYLE_RULES
+
 
 # Create your views here.
 
@@ -66,11 +68,11 @@ def create_course(request):
     """
     if request.method == "POST":
         chapters = request.POST.getlist('chapter_name')
-
+        course_title = request.POST.get("course_title")
         course = Course()
         if request.user.is_authenticated:
             course.author = request.user
-        course.title = "Курс"
+        course.title = course_title
         course.technology = request.POST.get("technology")
         course.save()
         chapter1 = create_chapter(course, chapters[0], 0)
@@ -148,7 +150,7 @@ def generate_theory(chapter_name: str, technology: str) -> list:
     7)Не используй классы меняющие цвет заднего фона на светлый
     """
 
-    question = prompt + "\n Название главы:" + chapter_name + ", Название технологии:" + technology
+    question = prompt + STYLE_RULES + "\n Название главы:" + chapter_name + ", Название технологии:" + technology
     answer = chat(question)
     return json.loads(answer)
 

@@ -24,7 +24,7 @@ def chat(massage: str) -> str:
 
     # First API call with reasoning
     response = client.chat.completions.create(
-        model="openrouter/elephant-alpha",
+        model="openai/gpt-oss-120b:free",
         messages=[{"role": "user", "content": massage}],
     )
 
