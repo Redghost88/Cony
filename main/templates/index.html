@@ -6,7 +6,8 @@
 
 {% block content %}
 <a href="{% url 'create_course' %}" class="btn btn-primary btn-sm"> Создать курс </a>
-{% for course in courses %}
+    <div class="row row-cols-1 row-cols-lg-3">
+    {% for course in courses %}
 <div class="col-md-6 mb-3">
     <div class="text-block">
         <div class="card-body">
@@ -22,4 +23,5 @@
     </div>
 </div>
 {% endfor %}
+    </div>
 {% endblock %}

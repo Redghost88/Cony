@@ -116,6 +116,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closebrackets.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/matchbrackets.min.js"></script>
     <script>
+        const GENERATE_TASKS = false
+
         const task_title = document.getElementById("task-title")
         const task_text_cont = document.getElementById("task-text")
         const task_input = document.getElementById("task-input")
@@ -148,7 +150,7 @@
             task_output.innerHTML = '{{ task.output_data|escapejs|safe }}'
             task_io_example.innerHTML = '{{ tests.0.input_data }} | {{ tests.0.output_data }}'
             show_attemts('{{ attempts|escapejs }}')
-            if (task_generated == "False") {
+            if (task_generated == "False" && GENERATE_TASKS) {
                 generate_task()
             }
         })

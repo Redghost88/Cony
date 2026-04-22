@@ -26,3 +26,8 @@
    - нажать "Get api key"
    - нажать "Create"
    - копируете ключ и вставляете его в поле OPENROUTER_KEY файла .env
+
+10. Создать docker образ:
+   ```bash
+   docker build . -t cony:0.1
+   ```
