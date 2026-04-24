@@ -6,22 +6,26 @@
 
 {% block content %}
 <a href="{% url 'create_course' %}" class="btn btn-primary btn-sm"> Создать курс </a>
-    <div class="row row-cols-1 row-cols-lg-3">
+<div class="row row-cols-1 row-cols-lg-3">
     {% for course in courses %}
-<div class="col-md-6 mb-3">
-    <div class="text-block">
-        <div class="card-body">
-            <h5 class="card-title">{{ course.0.title }}</h5>
-            <div class="small mb-3">
-                Создал: {{ course.0.author }} | {{ course.0.created_at }}
+    <div class="col-md-6 mb-3">
+        <div class="text-block">
+            <div class="card-body">
+                <h5 class="card-title">{{ course.0.title }}</h5>
+                <div class="small mb-3">
+                    Создал: {{ course.0.author }} | {{ course.0.created_at }}
+                    <div class="stats">
+                        {{ course.0.progress }}%
+                        <progress class="progress-bar" value="{{ course.0.progress }}" max="100"></progress>
+                    </div>
+                </div>
+                <a href="/course/{{ course.0.id }}/chapter/{{ course.1 }}/task/{{ course.2 }}"
+                   class="btn btn-primary btn-sm">
+                    Перейти к курсу
+                </a>
             </div>
-            <a href="/course/{{ course.0.id }}/chapter/{{ course.1 }}/task/{{ course.2 }}"
-               class="btn btn-primary btn-sm">
-                Перейти к курсу
-            </a>
         </div>
     </div>
+    {% endfor %}
 </div>
-{% endfor %}
-    </div>
 {% endblock %}

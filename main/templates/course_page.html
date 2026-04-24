@@ -13,10 +13,8 @@
     <aside class="left-panel">
         <div class="course-header">
             <div class="logo">{{ course.title }}</div>
-            <div class="stats">Прогресс по курсу: 1/89</div>
-            <div class="progress-bar">
-                <div class="progress-fill"></div>
-            </div>
+            <div class="stats">Прогресс по курсу: {{ course.progress }}%</div>
+            <progress class="progress-bar" value="{{ course.progress }}" max="100"></progress>
         </div>
 
         <div>
@@ -203,7 +201,7 @@
             fetch("/send_code/", {
                     method: "POST",
                     headers: {"Content-Type": "application/json", "X-CSRFToken": csrf_token.getAttribute("content")},
-                    body: JSON.stringify({"source_code": editor.getValue(), "task_id": "{{ task.id }}"})
+                    body: JSON.stringify({"source_code": editor.getValue(), "task_id": "{{ task.id }}", "course_id": "{{ course.id }}"})
                 },
             )
                 .then(response => response.json())

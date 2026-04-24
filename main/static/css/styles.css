@@ -260,18 +260,11 @@ input {
 
 .progress-bar {
   height: 6px;
-  background: var(--bg-input);
+  background: var(--bg-panel);
   border-radius: 10px;
+  border: none;
   overflow: hidden;
   margin-top: 6px;
-}
-
-.progress-fill {
-  height: 100%;
-  width: 1%; /* динамически изменится через JS или style */
-  background: linear-gradient(90deg, var(--accent), var(--progress));
-  border-radius: 10px;
-  box-shadow: 0 0 8px rgba(108, 92, 231, 0.6);
 }
 
 /* Базовые стили для кнопки */

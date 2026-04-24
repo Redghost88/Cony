@@ -346,7 +346,7 @@ def course_page(request, course_id, chapter_id, task_id):
             attempts = json.dumps(list(attempts[:5].values()), default=str)
         except ObjectDoesNotExist:
             attempts = []
-
+    update_course_progress(course, request.user)
     context = {
         "course": course,
         "chapters": chapters,
@@ -383,8 +383,28 @@ def check_code(request):
     if attempt.passed:
         task.decided = True
         task.save(update_fields=["decided"])
+        course_id = json.loads(request.body)["course_id"]
+        course = Course.objects.get(id=course_id)
+        update_course_progress(course, request.user)
     attempts = Attempt.objects.filter(task=task)
     return JsonResponse({"attempts": json.dumps(list(attempts[:5].values()), default=str)})
+
+
+def update_course_progress(course, user) -> None:
+    progress = 0
+    chapters = Chapter.objects.filter(course=course)
+    for c in chapters:
+        chapter_progress = 0.0
+        theory_blocks = Theory.objects.filter(chapter=c)
+        for t in theory_blocks:
+            if Task.objects.filter(theory=t, user=user).exists():
+                task = Task.objects.get(theory=t, user=user)
+                if task.decided:
+                    chapter_progress += 1 / len(theory_blocks)
+        progress += chapter_progress / len(chapters)
+    course.progress = round(progress * 100)
+    course.save(update_fields=["progress"])
+
 
 @require_http_methods(["POST"])
 def add_new_theory(request):
