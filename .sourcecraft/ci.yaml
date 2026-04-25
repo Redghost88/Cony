@@ -33,7 +33,9 @@ tasks:
           - python -m pip install --upgrade pip
           - pip install -r requirements.txt
           - pip install sphinx sphinx-rtd-theme
-          - sphynx-build -b html docs docs/build/html
+          - cd docs
+          - apt-get install -y make
+          - make html
         artifacts:
           paths: 
            - docs/build/html
