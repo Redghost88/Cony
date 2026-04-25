@@ -14,7 +14,6 @@ workflows:
     tasks:
       - pep8-check
       - build-docs
-      - publish-docs
 
 tasks:
   - name: pep8-check
@@ -23,9 +22,8 @@ tasks:
         image: python:3.12-slim
         script:
           - python -m pip install --upgrade pip
-          - pip install -r requirements.txt
-          - flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          - flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          - pip install pycodestyle 
+          - pycodestyle --max-line-length=120 .
 
   - name: build-docs
     cubes:
@@ -37,11 +35,8 @@ tasks:
           - pip install sphinx sphinx-rtd-theme
           - cd docs
           - make html
+        artifacts:
+          paths: 
+           - docs/build/html
 
-  - name: publish-docs
-    cubes:
-      - name: publish-documentation
-        image: python:3.12-slim
-        script:
-          - echo "Документация собрана в docs/build/html/"
-          - echo "Для публикации добавьте шаги деплоя на выбранную платформу"
+
