@@ -54,6 +54,9 @@
         const reply = document.createElement("div")
         reply.className = "message received"
         reply.id = "reply" + reply_count
+        reply.innerHTML = `<div class="spinner-border spinner-border-sm" role="status">
+  <span class="visually-hidden">Loading...</span>
+</div>`
         let question = ""
         if (!input.value.trim()) {
             question = invisible_text + text

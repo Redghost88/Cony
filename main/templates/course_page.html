@@ -46,7 +46,7 @@
     {% if theory %}
     <div class="text-block">
         <h2>{{ theory.title }}
-            {% if task.decided %}✅{% endif %}
+            {% if task.decided %}<span class="badge text-bg-success">✓</span>{% endif %}
         </h2>
         <p>{{ theory.text|safe }}</p>
     </div>
@@ -55,6 +55,7 @@
             <form onsubmit="event.preventDefault(); generate_task()">
                 <button type="submit" id="run-btn" class="btn btn-primary">Сгенерировать задачу</button>
             </form>
+            <br>
             <h3 id="task-title"></h3>
             <p id="task-text"></p>
             <div class="text-block">
@@ -87,9 +88,9 @@
                 </div>
                 <div class="col">
                     <h5>Входные данные</h5>
-                    <textarea id="code-input"></textarea>
+                    <textarea class="code-test-text-area" id="code-input"></textarea>
                     <h5>Выходные данные</h5>
-                    <textarea id="code-output" disabled="disabled"></textarea>
+                    <div class="code-test-text-area" id="code-output" disabled="disabled"></div><br>
                     <form onsubmit="event.preventDefault(); run_code()">
                         <button type="submit" id="run-btn" class="btn btn-primary">Протестировать код</button>
                         <br>

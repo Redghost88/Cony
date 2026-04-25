@@ -377,7 +377,10 @@ def run_code(request):
     code_timeout = 5
     try:
         process = subprocess.run(["python", "-c", code], input=input_data, capture_output=True, text=True, timeout=code_timeout)
-        output = process.stdout if process.stdout else process.stderr
+        if process.stdout:
+            output = process.stdout
+        else:
+            output = '<div style="color: #dc3545;">' + process.stderr + '</div>'
         return JsonResponse({"output": output})
     except subprocess.TimeoutExpired:
         return JsonResponse({'error': f"Превышено время выполнения программы ({code_timeout} секунд)"})
