@@ -16,10 +16,9 @@ from django.contrib.auth import authenticate, login, logout
 from django.utils.html import strip_tags
 from django.views.decorators.http import require_http_methods
 
-from cony.forms import LoginForm, RegisterForm
 from main.ai_agent import chat
 from main.code_checker import check_attempt
-from main.forms import ProfileUpdateForm
+from main.forms import ProfileUpdateForm, LoginForm, RegisterForm
 from main.models import Chapter, Course, Profile, Task, Test, Theory, Attempt
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
