@@ -1,9 +1,9 @@
-Ai_Agent_rst
+Agent_rst
 =====
 
 Документация по представлениям (agent_rst).
 
-.. automodule:: main.code_checker.py
+.. automodule:: main.ai_agent
    :members:
    :undoc-members:
    :show-inheritance:

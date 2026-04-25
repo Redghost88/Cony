@@ -17,4 +17,4 @@ repos:
         types: [python]
         args:
           - --rcfile=.pylintrc
-          - --fail-under=7
+          - --fail-under=8

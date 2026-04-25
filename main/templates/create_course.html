@@ -1,86 +1,87 @@
 {% extends "base.html" %}
 
 {% block title %}
-Создание курса
+    Создание курса
 {% endblock %}
 {% block content %}
-<div class="text-block">
-    <h2>Генерация курса</h2>
-    <form onsubmit="event.preventDefault(); createRequest()">
-        <div class="input-group mb-3">
-            <label class="input-group-text" for="chooseTechnology">Технология для изучения</label>
-            <select name="technology" class="form-select" id="chooseTechnology">
-                <option selected>Выберите...</option>
-                <option value="python">Python</option>
-                <option value="js">JavaScript</option>
-                <option value="c++">C++</option>
-            </select>
-        </div>
+    <div class="text-block">
+        <h2>Генерация курса</h2>
+        <form onsubmit="event.preventDefault(); createRequest()">
+            <div class="input-group mb-3">
+                <label class="input-group-text bg-transparent text-light" for="chooseTechnology">Технология для изучения</label>
+                <input class="form-control bg-transparent text-light" type="text" id="chooseTechnology"
+                       placeholder="Введите текст и нажмите Enter...">
+            </div>
+            Например: <button type="button" onclick="pasteTechnology('Python')" class="btn btn-primary">Python</button>
+            <button type="button" onclick="pasteTechnology('JavaScript')" class="btn btn-primary">JavaScript</button>
+            <button type="button" onclick="pasteTechnology('C++')" class="btn btn-primary">C++</button>
 
-        <br>
-        <h3>Выберите желаемый уровень погружения в технологию</h3>
-        <div id="learningLevel" class="btn-group" role="group" aria-label="Basic radio toggle button group">
-            <input type="radio" class="btn-check" name="btnradio" id="btnradio1" autocomplete="off" checked>
-            <label class="btn btn-outline-primary" for="btnradio1">Поверхностный</label>
+            <br>
+            <h3>Выберите желаемый уровень погружения в технологию</h3>
+            <div id="learningLevel" class="btn-group" role="group" aria-label="Basic radio toggle button group">
+                <input type="radio" class="btn-check" name="btnradio" id="btnradio1" autocomplete="off" checked>
+                <label class="btn btn-outline-primary" for="btnradio1">Поверхностный</label>
 
-            <input type="radio" class="btn-check" name="btnradio" id="btnradio2" autocomplete="off">
-            <label class="btn btn-outline-primary" for="btnradio2">Углубленный</label>
+                <input type="radio" class="btn-check" name="btnradio" id="btnradio2" autocomplete="off">
+                <label class="btn btn-outline-primary" for="btnradio2">Углубленный</label>
 
-            <input type="radio" class="btn-check" name="btnradio" id="btnradio3" autocomplete="off">
-            <label class="btn btn-outline-primary" for="btnradio3">Профессиональный</label>
-        </div>
+                <input type="radio" class="btn-check" name="btnradio" id="btnradio3" autocomplete="off">
+                <label class="btn btn-outline-primary" for="btnradio3">Профессиональный</label>
+            </div>
 
-        <br><br>
-        <h3>Что уже знаете о технологии</h3>
-        <input type="text" id="textInput" placeholder="Введите текст и нажмите Enter...">
+            <br><br>
+            <h3>Что уже знаете о технологии</h3>
+            <input class="bg-transparent text-light" type="text" id="textInput"
+                   placeholder="Введите текст и нажмите Enter...">
 
-        <div class="learn-technology-cards-container" id="cardsContainer">
-            <!-- Карточки будут добавляться сюда -->
-        </div>
+            <div class="learn-technology-cards-container" id="cardsContainer">
+                <!-- Карточки будут добавляться сюда -->
+            </div>
 
-        <h3>Напишите о чем бы вы хотели задачи в курсе</h3>
-        <i>*например ваш любимый сериал или персонажи</i>
-        <textarea id="task_wishes" class="form-control" aria-label="With textarea"></textarea><br>
-        <button type="submit" class="btn btn-primary">Cгенерировать курс</button>
+            <h3>Напишите о чем бы вы хотели задачи в курсе</h3>
+            <i>*например ваш любимый сериал или персонажи</i>
+            <textarea id="task_wishes" class="form-control bg-transparent text-light"
+                      aria-label="With textarea"></textarea><br>
+            <button type="submit" class="btn btn-primary">Cгенерировать курс</button>
+        </form>
+    </div>
+
+    <form method="POST" action="/create_course/">
+        {% csrf_token %}
+        <div id="course_preview"></div>
     </form>
-</div>
-
-<form method="POST" action="/create_course/">
-    {% csrf_token %}
-    <div id="course_preview"></div>
-</form>
 
 
 {% endblock %}
 
 {% block extra_js %}
-<script>
-    const technology = document.getElementById("chooseTechnology")
-    const task_wishes = document.getElementById("task_wishes")
-    const course_preview = document.getElementById("course_preview")
+    <script>
+        const technology = document.getElementById("chooseTechnology")
+        const task_wishes = document.getElementById("task_wishes")
+        const course_preview = document.getElementById("course_preview")
 
-    function createRequest() {
-        if (!technology.value || technology.value === "Выберите...") {
-            alert("Пожалуйста, выберите технологию");
-            return;
-        }
-
-        let choosedLevel = null
-        let learningLevels = document.querySelectorAll('#learningLevel input[type="radio"]')
-        for (let option of learningLevels) {
-            if (option.checked) {
-                const option_label = document.querySelector(`label[for="${option.id}"]`)
-                choosedLevel = option_label.textContent
-                break
+        function createRequest() {
+            if (!technology.value) {
+                alert("Пожалуйста, выберите технологию");
+                return;
             }
-        }
-        let learnedThemes = ""
-        let cards = document.querySelectorAll(".card span")
-        cards.forEach(card => {
-            learnedThemes += card.textContent + ","
-        })
-        
-        let prompt = `
+
+            let choosedLevel = null
+            let learningLevels = document.querySelectorAll('#learningLevel input[type="radio"]')
+            for (let option of learningLevels) {
+                if (option.checked) {
+                    const option_label = document.querySelector(`label[for="${option.id}"]`)
+                    choosedLevel = option_label.textContent
+                    break
+                }
+            }
+            let learnedThemes = ""
+            let cards = document.querySelectorAll(".card span")
+            cards.forEach(card => {
+                learnedThemes += card.textContent + ","
+            })
+
+            let prompt = `
     Ты — профессиональный преподаватель и эксперт по созданию учебных материалов по программированию.
 
     Пользователь передаёт тебе технологию для изучения в курсе, желаемый уровень погружения в технологию, темы которые он уже знает. Твоя задача — написать названия глав для изучения технологии с учетом того что пользователь уже знает.
@@ -88,18 +89,22 @@
     **Инструкции:**
 
     1. Прочитай название технологии курса.
-    2. Сгенерируй 10-12 назвний для глав, каждое название длиной от 1 до 3 слов.
-    3. Не создавай вводные главы по типу "История", "Введение", а так же не создавай глав с инструкцией по установке технологии
-    4. Название главы не должно содержать нумерацию
-    5. Структура ответа должна быть строго в следующем формате:
+    2. Сгенерируй название для курса и 10-12 названий для глав, каждое название длиной от 1 до 3 слов.
+    3. Название курса должно быть 2-5 слов
+    4. Не создавай вводные главы по типу "История", "Введение", а так же не создавай глав с инструкцией по установке технологии
+    5. Название главы не должно содержать нумерацию
+    6. Структура ответа должна быть строго в следующем формате:
 
     \`
     [
     {
-        "title": "Название первой главы",
+        "title": "Название курса"
+    }
+    {
+        "title": "Название первой главы"
     },
     {
-        "title": "Название второй главы",
+        "title": "Название второй главы"
     },
     ...
     ]
@@ -113,100 +118,110 @@
     \`
     `
 
-        let course_request = prompt + "\n" + `Название технологии:${technology.value}. Уровень погружения:${choosedLevel}. `
-        if (learnedThemes !== "") {
-            course_request += `Изученые темы:${learnedThemes}. `
-        }
+            let course_request = prompt + "\n" + `Название технологии:${technology.value}. Уровень погружения:${choosedLevel}. `
+            if (learnedThemes !== "") {
+                course_request += `Изученые темы:${learnedThemes}. `
+            }
 
-        generateCourse(course_request)
-        course_preview.innerHTML = `
+            generateCourse(course_request)
+            course_preview.innerHTML = `
         <div class="spinner-grow" role="status">
             <span class="visually-hidden">Loading...</span>
         </div>`
-    }
-
-    function generateCourse(question) {
-        let req = new XMLHttpRequest()
-        url = `/generate_answer/?question=${encodeURIComponent(question)}`
-        req.open("GET", url, true)
-        req.onload = function () {
-            let data = JSON.parse(req.responseText)
-            show_answer(data["answer"])
         }
-        req.send()
-    }
 
-    function show_answer(answer) {
-        course_preview.innerHTML = "<h2>План курса</h2>" + `<input type="hidden" name="technology" value="${technology.value}">`
-        answer = JSON.parse(answer)
-        let chapters = answer.map(item => item.title)
-        chapters.forEach(chapter => {
-            if (chapter != "") {
-                let chapter_cont = document.createElement("div")
-                chapter_cont.innerHTML = `
+        function generateCourse(question) {
+            let req = new XMLHttpRequest()
+            url = `/generate_answer/?question=${encodeURIComponent(question)}`
+            req.open("GET", url, true)
+            req.onload = function () {
+                let data = JSON.parse(req.responseText)
+                show_answer(data["answer"])
+            }
+            req.send()
+        }
+
+        function show_answer(answer) {
+            course_preview.innerHTML = "<h2>План курса</h2>" + `<input type="hidden" name="technology" value="${technology.value}">`
+            answer = answer.replace(/,(\s*[}\]])/g, '$1')
+            console.log(answer)
+            answer = JSON.parse(answer)
+            let titles = answer.map(item => item.title)
+            course_title = titles[0]
+            course_preview.innerHTML += `<h1>${course_title}</h1>
+            <input type="hidden" name="course_title" value="${course_title}">`
+            chapters = titles.slice(1)
+            chapters.forEach(chapter => {
+                if (chapter != "") {
+                    let chapter_cont = document.createElement("div")
+                    chapter_cont.innerHTML = `
             <div class="card">
                 <div class="card-body">
                     <label>${chapter}</label>
                     <input type="hidden" name="chapter_name" value="${chapter}">
                 </div>
             </div>`
-                course_preview.appendChild(chapter_cont)
+                    course_preview.appendChild(chapter_cont)
+                }
+            })
+            course_preview.innerHTML += `<button type="submit" class="btn btn-primary">Сохранить курс</button>`
+        }
+
+        // сохранить карточки
+        const textInput = document.getElementById('textInput');
+        const cardsContainer = document.getElementById('cardsContainer');
+
+        function createCard(text) {
+            const card = document.createElement('div');
+            card.className = 'learn-technology-card';
+
+            const cardText = document.createElement('span');
+            cardText.className = 'learn-technology-card-text';
+            cardText.textContent = text;
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.textContent = '✕';
+            deleteBtn.setAttribute('aria-label', 'Удалить');
+
+            deleteBtn.addEventListener('click', function () {
+                card.remove();
+                checkEmptyContainer();
+            });
+
+            card.appendChild(cardText);
+            card.appendChild(deleteBtn);
+
+            return card;
+        }
+
+        function addCard(text) {
+            const emptyMessage = document.getElementById('emptyMessage');
+            if (emptyMessage) {
+                emptyMessage.remove();
             }
-        })
-        course_preview.innerHTML += `<button type="submit" class="btn btn-primary">Сохранить курс</button>`
-    }
 
-    // сохранить карточки
-    const textInput = document.getElementById('textInput');
-    const cardsContainer = document.getElementById('cardsContainer');
+            const newCard = createCard(text);
+            cardsContainer.appendChild(newCard);
+        }
 
-    function createCard(text) {
-        const card = document.createElement('div');
-        card.className = 'learn-technology-card';
+        textInput.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
 
-        const cardText = document.createElement('span');
-        cardText.className = 'learn-technology-card-text';
-        cardText.textContent = text;
+                const text = textInput.value.trim();
 
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'delete-btn';
-        deleteBtn.textContent = '✕';
-        deleteBtn.setAttribute('aria-label', 'Удалить');
-
-        deleteBtn.addEventListener('click', function () {
-            card.remove();
-            checkEmptyContainer();
+                if (text !== '') {
+                    addCard(text);
+                    textInput.value = '';
+                } else {
+                    alert('Введите текст!');
+                }
+            }
         });
 
-        card.appendChild(cardText);
-        card.appendChild(deleteBtn);
-
-        return card;
-    }
-
-    function addCard(text) {
-        const emptyMessage = document.getElementById('emptyMessage');
-        if (emptyMessage) {
-            emptyMessage.remove();
+        function pasteTechnology(text) {
+            document.getElementById("chooseTechnology").value = text
         }
-
-        const newCard = createCard(text);
-        cardsContainer.appendChild(newCard);
-    }
-
-    textInput.addEventListener('keydown', function (event) {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-
-            const text = textInput.value.trim();
-
-            if (text !== '') {
-                addCard(text);
-                textInput.value = '';
-            } else {
-                alert('Введите текст!');
-            }
-        }
-    });
-</script>
+    </script>
 {% endblock %}
