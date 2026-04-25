@@ -16,10 +16,9 @@ from django.contrib.auth import authenticate, login, logout
 from django.utils.html import strip_tags
 from django.views.decorators.http import require_http_methods
 
-from cony.forms import LoginForm, RegisterForm
 from main.ai_agent import chat
 from main.code_checker import check_attempt
-from main.forms import ProfileUpdateForm
+from main.forms import ProfileUpdateForm, LoginForm, RegisterForm
 from main.models import Chapter, Course, Profile, Task, Test, Theory, Attempt
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
@@ -27,8 +26,8 @@ from django.contrib.auth.decorators import login_required
 
 from main.prompts import STYLE_RULES
 
-
 # Create your views here.
+
 
 def home(request):
     """
@@ -43,12 +42,15 @@ def home(request):
     """
     courses = []
     for course in Course.objects.all():
-        courses.append([course, course.current_chapter_number,
-                        Chapter.objects.get(course=course, order=course.current_chapter_number).current_theory_number])
+        courses.append(
+            [
+                course,
+                course.current_chapter_number,
+                Chapter.objects.get(course=course, order=course.current_chapter_number).current_theory_number,
+            ]
+        )
 
-    context = {
-        "courses": courses
-    }
+    context = {"courses": courses}
     return render(request, "index.html", context)
 
 
@@ -67,7 +69,7 @@ def create_course(request):
     :rtype: HttpResponse
     """
     if request.method == "POST":
-        chapters = request.POST.getlist('chapter_name')
+        chapters = request.POST.getlist("chapter_name")
         course_title = request.POST.get("course_title")
         course = Course()
         if request.user.is_authenticated:
@@ -90,7 +92,7 @@ def create_course(request):
         for i in range(1, len(chapters)):
             create_chapter(course, chapters[i], i)
 
-        return redirect('home')
+        return redirect("home")
     context = {}
     return render(request, "create_course.html", context)
 
@@ -235,7 +237,7 @@ def generate_tasks(request) -> JsonResponse:
         "task_text": task.task_content,
         "input_data": task.input_data,
         "output_data": task.output_data,
-        "tests": []
+        "tests": [],
     }
     tests = []
     for i in range(len(tests_info)):
@@ -271,19 +273,15 @@ def profile(request, username):
     profile_instance, created = Profile.objects.get_or_create(user=request.user)
     count_of_decided_tasks = Task.objects.filter(user=request.user, decided=True).count()
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = ProfileUpdateForm(request.POST, request.FILES, instance=profile_instance)
         if form.is_valid():
             form.save()
-            return redirect('profile', username=username)
+            return redirect("profile", username=username)
     else:
         form = ProfileUpdateForm(instance=profile_instance)
 
-    context = {
-        "profile_user": user,
-        "form": form,
-        "count_of_decided_tasks": count_of_decided_tasks
-    }
+    context = {"profile_user": user, "form": form, "count_of_decided_tasks": count_of_decided_tasks}
     return render(request, "profile.html", context)
 
 
@@ -297,7 +295,7 @@ def user_login(request):
             user = authenticate(request, username=username, password=password)
             if user is not None:
                 login(request, user)
-                return redirect('home')
+                return redirect("home")
         context["error"] = "неверный логин или пароль"
     context["form"] = LoginForm()
     return render(request, "login.html", context)
@@ -317,7 +315,8 @@ def registration(request):
             user_login(request)
             return redirect("home")
     context["form"] = RegisterForm()
-    return render(request, 'registration.html', context)
+    return render(request, "registration.html", context)
+
 
 @login_required
 def course_page(request, course_id, chapter_id, task_id):
@@ -365,7 +364,7 @@ def course_page(request, course_id, chapter_id, task_id):
         "task": task,
         "tests": tests,
         "attempts": attempts,
-        "last_attempt": last_attempt
+        "last_attempt": last_attempt,
     }
     return render(request, "course_page.html", context)
 
@@ -377,16 +376,19 @@ def run_code(request):
     input_data = request_body.get("input_data")
     code_timeout = 5
     try:
-        process = subprocess.run(["python", "-c", code], input=input_data, capture_output=True, text=True, timeout=code_timeout)
+        process = subprocess.run(
+            ["python", "-c", code], input=input_data, capture_output=True, text=True, timeout=code_timeout
+        )
         if process.stdout:
             output = process.stdout
         else:
-            output = '<div style="color: #dc3545;">' + process.stderr + '</div>'
+            output = '<div style="color: #dc3545;">' + process.stderr + "</div>"
         return JsonResponse({"output": output})
     except subprocess.TimeoutExpired:
-        return JsonResponse({'error': f"Превышено время выполнения программы ({code_timeout} секунд)"})
+        return JsonResponse({"error": f"Превышено время выполнения программы ({code_timeout} секунд)"})
     except Exception as e:
-        return JsonResponse({'error': str(e)})
+        return JsonResponse({"error": str(e)})
+
 
 @require_http_methods(["POST"])
 def check_code(request):
@@ -437,4 +439,4 @@ def add_new_theory(request):
         new_theory.order = i
         new_theory.save()
     chapter.save(update_fields=["current_theory_number"])
-    return redirect('course_page', course_id=course_id, chapter_id=chapter.order, task_id=chapter.current_theory_number)
+    return redirect("course_page", course_id=course_id, chapter_id=chapter.order, task_id=chapter.current_theory_number)

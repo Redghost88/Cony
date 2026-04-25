@@ -90,14 +90,16 @@
                     <h5>Входные данные</h5>
                     <textarea class="code-test-text-area" id="code-input"></textarea>
                     <h5>Выходные данные</h5>
-                    <div class="code-test-text-area" id="code-output" disabled="disabled"></div><br>
+                    <div class="code-test-text-area" id="code-output" disabled="disabled"></div>
+                    <br>
                     <form onsubmit="event.preventDefault(); run_code()">
                         <button type="submit" id="run-btn" class="btn btn-primary">Протестировать код</button>
                         <br>
                     </form>
                 </div>
             </div>
-            <p id="attempt-results"></p>
+            <br>
+            <div class="accordion" id="attempt-results"></div>
         </div>
         <div class="text-block">
             {% include "chat.html" %}
@@ -163,17 +165,6 @@
         if (task_generated == "False" && GENERATE_TASKS) {
             generate_task()
         }
-        function upgrade_solution() {
-            const theory_text = '{{ theory.text|safe }}'
-            const task_text = '{{ task.task_content|escapejs|safe }}'
-            let solution = ""
-            if('{{ last_attempt }}') {
-                solution = '{{ last_attempt.source_code|escapejs|safe }}'
-            }
-            const invisible_msg_text = `Мне дана теория ${theory_text}. У меня есть задача: ${task_text}. Я успешно решил задачу вот так: ${solution}. Напиши краткий ответ 100-200 слов`
-            const msg_text = "Как улучшить мое решение?"
-            sendMessage(msg_text, invisible_msg_text)
-        }
     })
 
     function generate_task() {
@@ -215,11 +206,23 @@
 
     function show_attemts(attempts) {
         attempt_results.innerHTML = ''
+        let index = JSON.parse(attempts).length
         for (const a of JSON.parse(attempts)) {
-            attempt_results.innerHTML += `<hr>
-    <p>Время: ${a.created_at} — </p>
-    <pre>${a.source_code}</pre>
-    <pre>${a.check_log}</pre>`
+            attempt_results.innerHTML += `<div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapseOne${a.id}" aria-expanded="false" aria-controls="collapseOne">
+                                Посылка ${index--}
+                        </button>
+                    </h2>
+                    <div id="collapseOne${a.id}" class="accordion-collapse collapse show" data-bs-parent="#accordionExample">
+                        <div class="accordion-body">
+                            Время: ${a.created_at}
+                            <pre>${a.source_code}</pre>
+                            <pre>${a.check_log}</pre>
+                        </div>
+                    </div>
+                </div>`
         }
     }
 
@@ -239,6 +242,17 @@
                     console.log(data.attempts)
                     show_attemts(data.attempts)
                 })
+    }
+    function upgrade_solution() {
+        const theory_text = '{{ theory.text|safe }}'
+        const task_text = '{{ task.task_content|escapejs|safe }}'
+        let solution = ""
+        if('{{ last_attempt }}') {
+            solution = '{{ last_attempt.source_code|escapejs|safe }}'
+        }
+        const invisible_msg_text = `Мне дана теория ${theory_text}. У меня есть задача: ${task_text}. Я успешно решил задачу вот так: ${solution}. Напиши краткий ответ 100-200 слов`
+        const msg_text = "Как улучшить мое решение?"
+        sendMessage(msg_text, invisible_msg_text)
     }
 </script>
 {% endblock %}

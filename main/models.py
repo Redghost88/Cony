@@ -5,6 +5,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+
 # Create your models here.
 class Course(models.Model):
     """Модель курса обучения.
@@ -67,6 +68,7 @@ class Theory(models.Model):
     text = models.CharField(max_length=4096, default="")
     order = models.PositiveSmallIntegerField(default=0)
 
+
 class Task(models.Model):
     theory = models.ForeignKey(Theory, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -77,6 +79,7 @@ class Task(models.Model):
     decided = models.BooleanField(default=False)
     is_generated = models.BooleanField(default=False)
 
+
 class Test(models.Model):
     task = models.ForeignKey(Task, on_delete=models.PROTECT)
     input_data = models.CharField(max_length=1024, default="")
@@ -85,11 +88,13 @@ class Test(models.Model):
     order = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
-        ordering = ['order', 'id']
+        ordering = ["order", "id"]
+
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    avatar = models.ImageField(upload_to='avatars/', default='default.jpg')
+    avatar = models.ImageField(upload_to="avatars/", default="default.jpg")
+
 
 class Attempt(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
@@ -100,4 +105,4 @@ class Attempt(models.Model):
     check_log = models.TextField(blank=True)
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ["-created_at"]

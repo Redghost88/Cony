@@ -27,7 +27,7 @@ urlpatterns = [
     path("", views.home, name="home"),
     path("create_course/", views.create_course, name="create_course"),
     path("generate_answer/", views.generate_answer),
-    path('profile/<str:username>', views.profile, name='profile'),
+    path("profile/<str:username>", views.profile, name="profile"),
     path("login/", views.user_login, name="login"),
     path("logout/", views.user_logout),
     path("registration/", views.registration, name="registration"),
@@ -35,7 +35,7 @@ urlpatterns = [
     path("run_code/", views.run_code),
     path("send_code/", views.check_code),
     path("generate_task/", views.generate_tasks),
-    path("add_new_theory/", views.add_new_theory)
+    path("add_new_theory/", views.add_new_theory),
 ]
 
 if settings.DEBUG:
