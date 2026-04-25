@@ -34,6 +34,7 @@ tasks:
           - pip install -r requirements.txt
           - pip install sphinx sphinx-rtd-theme
           - cd docs
+          - apt-get update
           - apt-get install -y make
           - make html
         artifacts:
