@@ -18,3 +18,5 @@ documentation for details.
    views.rst
    models.rst
    ai_agent.rst
+   code_checker.rst
+   forms.rst
