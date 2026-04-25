@@ -106,7 +106,7 @@ def create_chapter(course: Course, name: str, order: int) -> Chapter:
 
 def generate_theory(chapter_name: str, technology: str) -> list:
     prompt = """
-    Ты — профессиональный преподаватель и эксперт по созданию учебных материалов по программированию.
+    Ты - профессиональный преподаватель и эксперт по созданию учебных материалов по программированию.
 
     Пользователь передаёт тебе название главы курса и технологию, которая будет извучаться в курсе. Твоя задача — создать качественное теоретическое содержание для этой главы.
 
@@ -148,6 +148,7 @@ def generate_theory(chapter_name: str, technology: str) -> list:
     5)Избегай чрезмерно сложного жаргона, если это не обязательно для темы.
     6)Не создавай задачи внутри полей "content".
     7)Не используй классы меняющие цвет заднего фона на светлый
+    8)Не используй символы табуляции, например "\\n" или "\\t"
     """
 
     question = prompt + STYLE_RULES + "\n Название главы:" + chapter_name + ", Название технологии:" + technology
@@ -183,7 +184,12 @@ def generate_tasks(request) -> JsonResponse:
     - Не должна требовать знаний, которые ещё не были пройдены.
     - Должна быть интересной и с небольшим реальным контекстом.
     - Уровень сложности должен соответствовать уровню блока (не слишком простой и не слишком сложный).
-    - Обязательно напиши 4 примера входа/выхода."""
+    - Обязательно напиши 4 примера входа/выхода.
+    - Задача должна решаться в одном файле(например, в index.html, script.js или main.py — в зависимости от языка). 
+    Без необходимости создавать несколько файлов, папок, импортировать локальные модули или читать/писать файлы на диск.
+    - Входные данные — всегда простые: либо ввод с клавиатуры (prompt, input(), stdin), либо готовый массив/объект прямо в коде. 
+    Запрещены: чтение из файлов, сложный парсинг строк, ввод через аргументы командной строки.
+    - Выходные данные — вывод в консоль (console.log, print) или на HTML-страницу (если это фронтенд-задача)."""
 
     structure = """
     Структура ответа должна быть строго в следующем формате:
@@ -203,7 +209,7 @@ def generate_tasks(request) -> JsonResponse:
     ]
     
     Важные правила:
-
+    
     1)Отвечай только массивом из словарей, без каких-либо дополнительных пояснений, приветствий или заключений.
     2)Используй html тэги и bootstrap стили внутри полей "content".
     3)Все блоки должны быть на русском языке.
@@ -255,7 +261,7 @@ def generate_answer(request):
     :query string: Если параметр ``question`` отсутствует, используется пустая строка.
 
     """
-    question = request.GET.get("question", "")
+    question = STYLE_RULES + request.GET.get("question", "")
     context = {"answer": chat(question)}
     return JsonResponse(context)
 
@@ -340,9 +346,11 @@ def course_page(request, course_id, chapter_id, task_id):
         except ObjectDoesNotExist:
             task = Task.objects.create(theory=theory, user=request.user)
     attempts = []
+    code = ""
     if task:
         try:
             attempts = Attempt.objects.filter(task=task)
+            last_attempt = attempts.first()
             attempts = json.dumps(list(attempts[:5].values()), default=str)
         except ObjectDoesNotExist:
             attempts = []
@@ -356,16 +364,19 @@ def course_page(request, course_id, chapter_id, task_id):
         "task": task,
         "tests": tests,
         "attempts": attempts,
+        "last_attempt": last_attempt
     }
     return render(request, "course_page.html", context)
 
 
 @require_http_methods(["POST"])
 def run_code(request):
-    code = json.loads(request.body)
+    request_body = json.loads(request.body)
+    code = request_body.get("code")
+    input_data = request_body.get("input_data")
     code_timeout = 5
     try:
-        process = subprocess.run(["python", "-c", code], capture_output=True, text=True, timeout=code_timeout)
+        process = subprocess.run(["python", "-c", code], input=input_data, capture_output=True, text=True, timeout=code_timeout)
         output = process.stdout if process.stdout else process.stderr
         return JsonResponse({"output": output})
     except subprocess.TimeoutExpired:

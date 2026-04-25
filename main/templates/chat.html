@@ -1,56 +1,85 @@
-<div class="chat-body">
-  <div class="chat-container">
+<div class="chat-container">
     <div class="chat-header">Cony chat</div>
 
     <div class="chat-messages" id="messages">
-      <div class="message received">Привет! Как дела?</div>
+        <div class="message received">Привет! Чем могу помочь?</div>
     </div>
 
     <div class="chat-input-cont">
 
-      <form onsubmit="event.preventDefault(); sendMessage()">
-        <input class="chat-input" id="input" type="text" name="question" placeholder="Напиши сообщение..." autocomplete="off">
-        <button class="chat-button" type="submit">➤</button>
-      </form>
+        <form onsubmit="event.preventDefault(); sendMessage()">
+            <input class="chat-input" id="input" type="text" name="question"
+                   placeholder="Напиши сообщение..."
+                   autocomplete="off">
+            <button class="chat-button" type="submit">➤</button>
+        </form>
     </div>
-  </div>
 </div>
 
 <script>
-  const messages = document.getElementById("messages")
-  const input = document.getElementById("input")
-  let reply_count = 0
+    const messages = document.getElementById("messages")
+    const input = document.getElementById("input")
+    let reply_count = 0
+    const agent_settings = `Ты - профессиональный преподаватель и эксперт по программированию, который дает понятные советы про решению задач по программированию.
+    Важные правила:
+    - Верни только ответ на вопрос без дополнительного текста.
+    - не пиши код для решения задачи, только советы, чтобы пользователь сам заменил свой код.
+    - Верни ответ строго в формате JSON без дополнительного текста.
+    - Не используй markdown стили.
+    - Используй html тэги и bootstrap стили внутри полей "content".
+    - Весь текст на русском языке.
+    - Содержание должно быть точным, структурированным и педагогически продуманным.
+    - Избегай чрезмерно сложного жаргона, если это не обязательно для темы.
+    - Не создавай задачи внутри полей "content".
+    - Не используй классы меняющие цвет заднего фона на светлый
+    - Не используй символы табуляции, например "\\n" или "\\t".
+`
 
-  function sendMessage() {
-    const text = input.value.trim()
-    if (!text) return
+    function sendMessage(msg_text, invisible_text = '') {
+        let text = input.value.trim()
+        if (!text) {
+            if (msg_text) {
+                text = msg_text
+            } else {
+                return
+            }
+        }
 
-    // моё сообщение
-    const msg = document.createElement("div")
-    msg.className = "message sent"
-    msg.textContent = text
-    messages.appendChild(msg)
+        // моё сообщение
+        const msg = document.createElement("div")
+        msg.className = "message sent"
+        msg.textContent = text
+        messages.appendChild(msg)
 
-    const reply = document.createElement("div")
-    reply.className = "message received"
-    reply.id = "reply" + reply_count
-    generate_answer(input.value, reply_count)
-    reply_count += 1
-    messages.appendChild(reply)
-    messages.scrollTop = messages.scrollHeight
+        const reply = document.createElement("div")
+        reply.className = "message received"
+        reply.id = "reply" + reply_count
+        let question = ""
+        if (!input.value.trim()) {
+            question = invisible_text + text
+        } else {
+            question = input.value
+        }
+        generate_answer(agent_settings + question, reply_count)
+        reply_count += 1
+        messages.appendChild(reply)
+        messages.scrollTop = messages.scrollHeight
 
-    input.value = ""
-    messages.scrollTop = messages.scrollHeight
-  }
-
-  function generate_answer(question, ans_id) {
-    let req = new XMLHttpRequest()
-    url = `/generate_answer/?question=${encodeURIComponent(question)}`
-    req.open("GET", url, true)
-    req.onload = function () {
-      let data = JSON.parse(req.responseText)
-      document.getElementById("reply" + ans_id).innerHTML = data["answer"]
+        input.value = ""
+        messages.scrollTop = messages.scrollHeight
     }
-    req.send()
-  }
+
+    function generate_answer(question, ans_id) {
+        let req = new XMLHttpRequest()
+        url = `/generate_answer/?question=${encodeURIComponent(question)}`
+        req.open("GET", url, true)
+        req.onload = function () {
+            console.log(req.responseText)
+            let data = JSON.parse(req.responseText)
+            let msg = JSON.parse(data.answer)
+            console.log(msg)
+            document.getElementById("reply" + ans_id).innerHTML = msg["content"]
+        }
+        req.send()
+    }
 </script>
