@@ -1,0 +1,47 @@
+on:
+  push:
+    - workflows: [main-workflow]
+      filter:
+        branches: ["master"]
+  pull_request:
+    - workflows: [main-workflow]
+      filter:
+        source_branches: ["**"]
+        target_branches: ["master"]
+
+workflows:
+  main-workflow:
+    tasks:
+      - pep8-check
+      - build-docs
+      - publish-docs
+
+tasks:
+  - name: pep8-check
+    cubes:
+      - name: check-pep8
+        image: python:3.11-slim
+        script:
+          - python -m pip install --upgrade pip
+          - pip install -r requirements.txt
+          - flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          - flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+  - name: build-docs
+    cubes:
+      - name: build-documentation
+        image: python:3.11-slim
+        script:
+          - python -m pip install --upgrade pip
+          - pip install -r requirements.txt
+          - pip install sphinx sphinx-rtd-theme
+          - cd docs
+          - make html
+
+  - name: publish-docs
+    cubes:
+      - name: publish-documentation
+        image: python:3.11-slim
+        script:
+          - echo "Документация собрана в docs/build/html/"
+          - echo "Для публикации добавьте шаги деплоя на выбранную платформу"
