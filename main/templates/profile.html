@@ -15,4 +15,156 @@
     <p> Присоединился: {{ profile_user.date_joined }}</p>
 
     <p>Количество решенных задач: {{ count_of_decided_tasks }}</p>
+
+
+
+
+
+
+
+
+
+<head>
+    <meta charset="UTF-8">
+    <title>Диаграмма задач (данные из кода)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <style>
+        .widget {
+            max-width: 320px;
+            background: white;
+            border-radius: 24px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            font-family: system-ui, sans-serif;
+        }
+        .chart-container {
+            display: flex;
+            justify-content: center;
+            margin: 10px 0;
+        }
+        canvas {
+            max-width: 200px;
+            width: 100%;
+            height: auto;
+        }
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            font-size: 0.75rem;
+            margin: 8px 0;
+        }
+        .legend-color {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 12px;
+            margin-right: 5px;
+        }
+        .stats {
+            text-align: center;
+            font-size: 0.75rem;
+            background: #eff6ff;
+            padding: 6px;
+            border-radius: 20px;
+        }
+    </style>
+</head>
+<body style="background: #eef2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0;">
+<div class="widget">
+    <div style="font-weight: 600; margin-bottom: 8px;">📊 Статистика задач</div>
+    <div class="chart-container">
+        <canvas id="taskChart" width="200" height="200"></canvas>
+    </div>
+    <div class="legend">
+        <div><span class="legend-color" style="background: #10b981;"></span> Решено</div>
+        <div><span class="legend-color" style="background: #f97316;"></span> Осталось</div>
+    </div>
+    <div class="stats" id="statsArea"></div>
+</div>
+
+<script>
+    Chart.register(ChartDataLabels);
+
+    // ====================================================
+    // ★★★ ЗДЕСЬ ВЫ УКАЗЫВАЕТЕ ДАННЫЕ ДЛЯ ДИАГРАММЫ ★★★
+    // ====================================================
+    const solvedTasks = '{{ count_of_decided_tasks }}';
+    const unsolvedTasks = '{{ count_of_undecided_tasks }}';
+    // ====================================================
+
+    const canvas = document.getElementById('taskChart');
+    let chart;
+
+    function updateStats(solved, unsolved) {
+        const total = solved + unsolved;
+        const percent = total === 0 ? 0 : (solved / total * 100).toFixed(1);
+        document.getElementById('statsArea').innerHTML = `
+            📋 Всего задач: <strong>${total}</strong><br>
+            ✅ Выполнено: <strong>${percent}%</strong>
+        `;
+    }
+
+    function renderChart(solved, unsolved) {
+        const total = solved + unsolved;
+        if (chart) chart.destroy();
+
+        if (total === 0) {
+            chart = new Chart(canvas, {
+                type: 'pie',
+                data: { labels: ['Нет данных'], datasets: [{ data: [1], backgroundColor: ['#9ca3af'] }] },
+                options: {
+                    responsive: true, maintainAspectRatio: true,
+                    plugins: { tooltip: { callbacks: { label: () => 'Нет задач' } }, datalabels: { formatter: () => '0%' } }
+                }
+            });
+            updateStats(0, 0);
+            return;
+        }
+
+        chart = new Chart(canvas, {
+            type: 'pie',
+            data: {
+                labels: ['Решённые', 'Нерешённые'],
+                datasets: [{
+                    data: [solved, unsolved],
+                    backgroundColor: ['#10b981', '#f97316'],
+                    borderWidth: 1.5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => {
+                                const val = ctx.raw;
+                                const pct = (val / total * 100).toFixed(1);
+                                return `${ctx.label}: ${val} (${pct}%)`;
+                            }
+                        }
+                    },
+                    legend: { display: false },
+                    datalabels: {
+                        color: 'white',
+                        backgroundColor: 'rgba(0,0,0,0.6)',
+                        borderRadius: 12,
+                        padding: { top: 2, bottom: 2, left: 6, right: 6 },
+                        font: { weight: 'bold', size: 11 },
+                        formatter: (value) => {
+                            const pct = (value / total * 100).toFixed(1);
+                            return `${pct}%`;
+                        }
+                    }
+                }
+            }
+        });
+        updateStats(solved, unsolved);
+    }
+
+    renderChart(solvedTasks, unsolvedTasks);
+</script>
+</body>
 {% endblock %}

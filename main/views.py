@@ -270,6 +270,7 @@ def profile(request, username):
     user = get_object_or_404(User, username=username)
     profile_instance, created = Profile.objects.get_or_create(user=request.user)
     count_of_decided_tasks = Task.objects.filter(user=request.user, decided=True).count()
+    count_of_undecided_tasks = Task.objects.filter(user=request.user, decided=False).count()
 
     if request.method == 'POST':
         form = ProfileUpdateForm(request.POST, request.FILES, instance=profile_instance)
@@ -282,7 +283,9 @@ def profile(request, username):
     context = {
         "profile_user": user,
         "form": form,
-        "count_of_decided_tasks": count_of_decided_tasks
+        "count_of_decided_tasks": count_of_decided_tasks,
+        "count_of_undecided_tasks": count_of_undecided_tasks,
+
     }
     return render(request, "profile.html", context)
 
