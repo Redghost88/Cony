@@ -23,7 +23,7 @@ def check_attempt(attempt: Attempt) -> None:
     lines = []
     all_ok = True
 
-    with tempfile.NamedTemporaryFile('w', suffix='.py', delete=False, encoding='utf-8') as f:
+    with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False, encoding="utf-8") as f:
         f.write(attempt.source_code)
         path = f.name
 
@@ -32,26 +32,26 @@ def check_attempt(attempt: Attempt) -> None:
             try:
                 r = _run_python_file(path, t.input_data)
             except subprocess.TimeoutExpired:
-                lines.append(f'Тест #{t.order}: таймаут')
+                lines.append(f"Тест #{t.order}: таймаут")
                 all_ok = False
                 continue
 
-            out = (r.stdout or '').strip()
-            exp = (t.output_data or '').strip()
-            err = (r.stderr or '').strip()
+            out = (r.stdout or "").strip()
+            exp = (t.output_data or "").strip()
+            err = (r.stderr or "").strip()
 
             if r.returncode != 0:
-                lines.append(f'Тест #{t.order}: код выхода {r.returncode}')
+                lines.append(f"Тест #{t.order}: код выхода {r.returncode}")
                 if err:
-                    lines.append(f'  stderr: {err}')
+                    lines.append(f"  stderr: {err}")
                 all_ok = False
                 continue
 
             if out != exp:
-                lines.append(f'Тест #{t.order}: ожидали {exp!r}, получили {out!r}')
+                lines.append(f"Тест #{t.order}: ожидали {exp!r}, получили {out!r}")
                 all_ok = False
             else:
-                lines.append(f'Тест #{t.order}: OK')
+                lines.append(f"Тест #{t.order}: OK")
     finally:
         try:
             os.unlink(path)
@@ -59,5 +59,5 @@ def check_attempt(attempt: Attempt) -> None:
             pass
 
     attempt.passed = all_ok
-    attempt.check_log = '\n'.join(lines)
-    attempt.save(update_fields=['passed', 'check_log'])
+    attempt.check_log = "\n".join(lines)
+    attempt.save(update_fields=["passed", "check_log"])
