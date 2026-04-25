@@ -53,7 +53,7 @@
     <div class="row">
         <div class="text-block col">
             <form onsubmit="event.preventDefault(); generate_task()">
-                <button type="submit" id="run-btn" class="btn btn-primary">Сгенерировать задачу</button>
+                <button type="submit" class="btn btn-primary">Сгенерировать задачу</button>
             </form>
             <br>
             <h3 id="task-title"></h3>
@@ -163,6 +163,17 @@
         if (task_generated == "False" && GENERATE_TASKS) {
             generate_task()
         }
+        function upgrade_solution() {
+            const theory_text = '{{ theory.text|safe }}'
+            const task_text = '{{ task.task_content|escapejs|safe }}'
+            let solution = ""
+            if('{{ last_attempt }}') {
+                solution = '{{ last_attempt.source_code|escapejs|safe }}'
+            }
+            const invisible_msg_text = `Мне дана теория ${theory_text}. У меня есть задача: ${task_text}. Я успешно решил задачу вот так: ${solution}. Напиши краткий ответ 100-200 слов`
+            const msg_text = "Как улучшить мое решение?"
+            sendMessage(msg_text, invisible_msg_text)
+        }
     })
 
     function generate_task() {
@@ -228,15 +239,6 @@
                     console.log(data.attempts)
                     show_attemts(data.attempts)
                 })
-    }
-
-    function upgrade_solution() {
-        const theory_text = "{{ theory.text|safe }}"
-        const task_text = "{{ task.task_content|escapejs|safe }}"
-        const solution = "{{ last_attempt.source_code|escapejs|safe }}"
-        const invisible_msg_text = `Мне дана теория ${theory_text}. У меня есть задача: ${task_text}. Я успешно решил задачу вот так: ${solution}. Напиши краткий ответ 100-200 слов`
-        const msg_text = "Как улучшить мое решение?"
-        sendMessage(msg_text, invisible_msg_text)
     }
 </script>
 {% endblock %}

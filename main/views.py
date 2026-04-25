@@ -346,6 +346,7 @@ def course_page(request, course_id, chapter_id, task_id):
         except ObjectDoesNotExist:
             task = Task.objects.create(theory=theory, user=request.user)
     attempts = []
+    last_attempt = None
     code = ""
     if task:
         try:
