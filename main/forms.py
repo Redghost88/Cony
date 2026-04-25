@@ -1,41 +1,22 @@
-"""
-Django-формы проекта
-"""
-
-from django import forms
 from main.models import Profile
+from django import forms
+from django.contrib.auth.models import User
+from django.contrib.auth.forms import UserCreationForm
+
+
+class LoginForm(forms.Form):
+    model = User
+    username = forms.CharField(label="Логин", max_length=256)
+    password = forms.CharField(label="Пароль", max_length=256, widget=forms.PasswordInput)
+
+
+class RegisterForm(UserCreationForm):
+    class Meta:
+        model = User
+        fields = ["username", "email"]
 
 
 class ProfileUpdateForm(forms.ModelForm):
-    """
-    Форма обновления профиля пользователя.
-
-    Предназначена для редактирования данных профиля, привязанного к модели
-    ``Profile``. Включает только поле загрузки/изменения аватара.
-    Автоматически обрабатывает валидацию файлов и сохранение изменений
-    в базе данных через стандартный механизм ``ModelForm``.
-
-    Пример использования::
-
-        def profile_update_view(request):
-            profile = request.user.profile
-            if request.method == 'POST':
-                # Важно передать request.FILES для корректной обработки аватара
-                form = ProfileUpdateForm(request.POST, request.FILES, instance=profile)
-                if form.is_valid():
-                    form.save()
-                    messages.success(request, "Аватар успешно обновлён.")
-                    return redirect('profile')
-            else:
-                form = ProfileUpdateForm(instance=profile)
-            return render(request, 'profile/update.html', {'form': form})
-
-    :cvar Meta.model: Модель профиля, связанная с формой.
-    :type Meta.model: Profile
-    :cvar Meta.fields: Список полей модели, доступных для редактирования.
-    :type Meta.fields: list[str]
-    """
-
     class Meta:
         model = Profile
         fields = ["avatar"]
