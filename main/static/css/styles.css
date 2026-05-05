@@ -1,54 +1,59 @@
 :root {
-  --bg-base: #0b0e14;
-  --bg-panel: #11161f;
-  --bg-card: #1a2230;
-  --bg-input: #1e2633;
-  --border-light: #2a3441;
-  --text-light: #f0f4fe;
-  --text-dim: #b0bed6;
-  --accent-glow: #a688ff;
-  --progress: #00d2a1;
-  --bg: #0f1117;
-  --left-panel-bg: #0a0c12;
-  --accent: #0084ff;
-  --green: #22c55e;
-  --border: #1e293b;
-  --card: #1a1f2e;
-  background: var(--bg-base);
+    --bg-base: #0b0e14;
+    --bg-panel: #11161f;
+    --bg-card: #1a2230;
+    --bg-input: #1e2633;
+    --border-light: #2a3441;
+    --text-light: #f0f4fe;
+    --text-dim: #b0bed6;
+    --accent-glow: #a688ff;
+    --progress: #00d2a1;
+    --bg: #0f1117;
+    --left-panel-bg: #0a0c12;
+    --accent: #0084ff;
+    --green: #22c55e;
+    --border: #1e293b;
+    --card: #1a1f2e;
+    --red: #FF4B4B;
+    background: var(--bg-base);
 }
 
 html, body {
-  height: 100%;
-  min-height: 100%;
-  background: var(--bg-base);
-  color: var(--text-light);
-  font-family: 'Segoe UI', system-ui, sans-serif;
+    height: 100%;
+    min-height: 100%;
+    background: var(--bg-base);
+    color: var(--text-light);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+input {
+var(--bg-base);
 }
 
 .text-block {
-  background: var(--bg-card);
-  border-radius: 16px;
-  padding: 1.5rem;
-  border: 1px solid var(--border-light);
-  box-shadow: 0 15px 30px -10px rgba(0,0,0,0.5);
-  max-width: 100%;
-  margin: 0.75rem;
-  word-wrap: break-word;
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 1.5rem;
+    border: 1px solid var(--border-light);
+    box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.5);
+    max-width: 100%;
+    margin: 0.75rem;
+    word-wrap: break-word;
 }
 
 .text-block h2 {
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 1.5rem;
-  color: white;
-  letter-spacing: -0.01em;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    color: white;
+    letter-spacing: -0.01em;
 }
 
 .text-block p {
-  color: var(--text-dim);
-  line-height: 1.7;
-  font-size: 1.2rem;
-  margin-bottom: 1.8rem;
+    color: var(--text-dim);
+    line-height: 1.7;
+    font-size: 1.2rem;
+    margin-bottom: 1.8rem;
 }
 
 
@@ -128,7 +133,6 @@ html, body {
 .chat-button:hover {
     background: #006be6;
 }
-
 
 
 /* стили для карточек с тем что пользователь знал о технологии */
@@ -213,20 +217,20 @@ html, body {
 
 /* стили для страницы курса */
 .left-panel {
-  width: 280px;
-  max-width: 100%;
-  background: var(--bg-panel);
-  border-right: 1px solid var(--border-light);
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  position: fixed;
-  padding-top: 10px;
-  margin-top: 58px;
-  top: 0;
-  overflow-y: auto;
-  flex-shrink: 0;
-  z-index: 5;
+    width: 280px;
+    max-width: 100%;
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border-light);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    position: fixed;
+    padding-top: 10px;
+    margin-top: 58px;
+    top: 0;
+    overflow-y: auto;
+    flex-shrink: 0;
+    z-index: 5;
 }
 
 .content-page {
@@ -242,82 +246,82 @@ html, body {
 }
 
 .logo {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: white;
-  margin-bottom: 0.75rem;
-  line-height: 1.3;
-  word-break: break-word;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 0.75rem;
+    line-height: 1.3;
+    word-break: break-word;
 }
 
 .stats {
-  font-size: 0.85rem;
-  color: var(--text-dim);
-  margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-bottom: 0.5rem;
 }
 
 .progress-bar {
-  height: 6px;
-  background: var(--bg-panel);
-  border-radius: 10px;
-  border: none;
-  overflow: hidden;
-  margin-top: 6px;
+    height: 6px;
+    background: var(--bg-panel);
+    border-radius: 10px;
+    border: none;
+    overflow: hidden;
+    margin-top: 6px;
 }
 
 /* Базовые стили для кнопки */
 .menu-item {
-  position: relative;
-  padding: 0.75rem 1rem 0.75rem 2.2rem;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 1rem;
-  color: var(--text-dim);
-  transition: all 0.2s ease;
-  width: 100%;
-  text-align: left;
-  border-radius: 8px;
+    position: relative;
+    padding: 0.75rem 1rem 0.75rem 2.2rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    color: var(--text-dim);
+    transition: all 0.2s ease;
+    width: 100%;
+    text-align: left;
+    border-radius: 8px;
 }
 
 /* Псевдоэлемент перед текстом кнопки */
 .menu-item::before {
-  content: "○";
-  position: absolute;
-  left: 0.8rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--accent, #6c5ce7);
-  opacity: 0.6;
-  font-size: 0.8rem;
-  pointer-events: none;
+    content: "○";
+    position: absolute;
+    left: 0.8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--accent, #6c5ce7);
+    opacity: 0.6;
+    font-size: 0.8rem;
+    pointer-events: none;
 }
 
 .menu-item:hover {
-  background: var(--bg-input, #f0f0f0);
-  color: var(--text-hover, #fff);
+    background: var(--bg-input, #f0f0f0);
+    color: var(--text-hover, #fff);
 }
 
 .menu-item:active {
-  transform: scale(0.98);
+    transform: scale(0.98);
 }
 
 .menu-item:focus-visible {
-  outline: 2px solid var(--accent, #6c5ce7);
-  outline-offset: 2px;
+    outline: 2px solid var(--accent, #6c5ce7);
+    outline-offset: 2px;
 }
 
 .menu-item.active {
-  background: var(--accent, #6c5ce7);
-  color: white;
-  font-weight: 500;
-  box-shadow: 0 4px 10px rgba(108, 92, 231, 0.3);
+    background: var(--accent, #6c5ce7);
+    color: white;
+    font-weight: 500;
+    box-shadow: 0 4px 10px rgba(108, 92, 231, 0.3);
 }
 
 .menu-item.active::before {
-  content: "●";
-  color: white;
-  opacity: 1;
+    content: "●";
+    color: white;
+    opacity: 1;
 }
 
 .course-page-main {
@@ -326,35 +330,35 @@ html, body {
     padding: 32px 40px;
 }
 
-    .CodeMirror * {
-        box-sizing: content-box;
-    }
+.CodeMirror * {
+    box-sizing: content-box;
+}
 
-    .CodeMirror pre {
-        font-family: inherit;
-        font-size: inherit;
-        margin: 0;
-        padding: 0;
-    }
+.CodeMirror pre {
+    font-family: inherit;
+    font-size: inherit;
+    margin: 0;
+    padding: 0;
+}
 
-    .CodeMirror-lines {
-        padding: 4px 0;
-    }
+.CodeMirror-lines {
+    padding: 4px 0;
+}
 
-    .CodeMirror-wrap pre {
-        word-wrap: break-word;
-        white-space: pre-wrap;
-        word-break: normal;
-    }
+.CodeMirror-wrap pre {
+    word-wrap: break-word;
+    white-space: pre-wrap;
+    word-break: normal;
+}
 
-    .CodeMirror-gutter {
-        width: 35px;
-        min-width: 35px;
-    }
+.CodeMirror-gutter {
+    width: 35px;
+    min-width: 35px;
+}
 
-    .CodeMirror-sizer {
-        margin-left: 35px !important;
-    }
+.CodeMirror-sizer {
+    margin-left: 35px !important;
+}
 
 .chapter-button {
     padding: 10px 0px 10px 10px;
@@ -380,4 +384,61 @@ html, body {
     border-color: var(--accent);
     background: var(--bg-card);
     box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+}
+
+.avatar-image {
+    max-height: 400px;
+    max-width: 400px;
+    border-radius: 50%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.avatar-image:hover {
+    transform: scale(1.05);
+}
+
+/* стили для блока статистики */
+
+.chart-container {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0;
+}
+
+canvas {
+    max-width: 200px;
+    width: 100%;
+    height: auto;
+}
+
+.legend {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    font-size: 0.75rem;
+    margin: 8px 0;
+}
+
+.legend-color {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 12px;
+    margin-right: 5px;
+}
+
+.stats_profile {
+    text-align: center;
+    font-size: 0.75rem;
+    background: var(--bg-panel);
+    padding: 6px;
+    border-radius: 20px;
+}
+
+.streak-number {
+    font-size: 4rem;
+    font-weight: 800;
+    color: #FF9600;
+    line-height: 1;
 }
