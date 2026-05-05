@@ -15,17 +15,17 @@ from django.shortcuts import render
 from django.contrib.auth import authenticate, login, logout
 from django.utils.html import strip_tags
 from django.views.decorators.http import require_http_methods
-
+from datetime import datetime, timedelta
 from cony.forms import LoginForm, RegisterForm
 from main.ai_agent import chat
 from main.code_checker import check_attempt
 from main.forms import ProfileUpdateForm
-from main.models import Chapter, Course, Profile, Task, Test, Theory, Attempt
+from main.models import Chapter, Course, Profile, Task, Test, Theory, Attempt, UserStats
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 
-from main.prompts import STYLE_RULES
+from main.prompts import STYLE_RULES, GENERATE_THEORY, GENERATE_TASK
 
 
 # Create your views here.
@@ -105,53 +105,7 @@ def create_chapter(course: Course, name: str, order: int) -> Chapter:
 
 
 def generate_theory(chapter_name: str, technology: str) -> list:
-    prompt = """
-    Ты - профессиональный преподаватель и эксперт по созданию учебных материалов по программированию.
-
-    Пользователь передаёт тебе название главы курса и технологию, которая будет извучаться в курсе. Твоя задача — создать качественное теоретическое содержание для этой главы.
-
-    **Инструкции:**
-
-    1. Прочитай название главы курса.
-    2. Сгенерируй **5–8 отдельных логически завершённых блоков** теории по данной главе.
-    3. Каждый блок должен:
-    - Иметь чёткую тему и заголовок
-    - Быть самодостаточным (можно читать независимо от других блоков)
-    - Содержать объяснение ключевых понятий, принципов или аспектов темы
-    - Быть написан понятным, но профессиональным языком
-    - Иметь объём примерно 150–350 слов
-    - По теме блока можно будет дать задачу в которой пользователь применит новые знания
-
-    4. Структура ответа должна быть строго в следующем формате:
-
-    [
-    {
-        "title": "Заголовок первого блока",
-        "content": "Полный текст теоретического блока..."
-    },
-    {
-        "title": "Заголовок второго блока",
-        "content": "Полный текст теоретического блока..."
-    },
-    ...
-    ]
-
-    Важные правила:
-
-    1)Верни ответ строго в формате JSON без дополнительного текста. 
-    Используй ТОЛЬКО двойные кавычки " для JSON. 
-    Экранируй кавычки внутри HTML: используй &quot; или \\\". 
-    Не добавляй пояснений, только JSON.
-    2)Используй html тэги и bootstrap стили внутри полей "content".
-    3)Весь текст на русском языке.
-    4)Содержание должно быть точным, структурированным и педагогически продуманным.
-    5)Избегай чрезмерно сложного жаргона, если это не обязательно для темы.
-    6)Не создавай задачи внутри полей "content".
-    7)Не используй классы меняющие цвет заднего фона на светлый
-    8)Не используй символы табуляции, например "\\n" или "\\t"
-    """
-
-    question = prompt + STYLE_RULES + "\n Название главы:" + chapter_name + ", Название технологии:" + technology
+    question = GENERATE_THEORY + STYLE_RULES + "\n Название главы:" + chapter_name + ", Название технологии:" + technology
     answer = chat(question)
     return json.loads(answer)
 
@@ -166,61 +120,7 @@ def generate_tasks(request) -> JsonResponse:
     if task.is_generated:
         Test.objects.filter(task=task).delete()
 
-    prompt = f"""
-    Ты — профессиональный методист онлайн-курсов по программированию. 
-    Твоя задача — создавать одну качественную практическую задачу, которая идеально закрепляет материал, пройденный в блоке теории.
-    
-    Создай **одну** задачу на основе следующего блока теории:
-    
-    **Язык программирования:** {technology}
-    
-    **Название блока теории:** {theory.title}
-    
-    **Содержание блока теории:** 
-    {strip_tags(theory.text)}
-    
-    Дополнительные требования:
-    - Задача должна полностью отрабатывать материал из этого блока теории.
-    - Не должна требовать знаний, которые ещё не были пройдены.
-    - Должна быть интересной и с небольшим реальным контекстом.
-    - Уровень сложности должен соответствовать уровню блока (не слишком простой и не слишком сложный).
-    - Обязательно напиши 4 примера входа/выхода.
-    - Задача должна решаться в одном файле(например, в index.html, script.js или main.py — в зависимости от языка). 
-    Без необходимости создавать несколько файлов, папок, импортировать локальные модули или читать/писать файлы на диск.
-    - Входные данные — всегда простые: либо ввод с клавиатуры (prompt, input(), stdin), либо готовый массив/объект прямо в коде. 
-    Запрещены: чтение из файлов, сложный парсинг строк, ввод через аргументы командной строки.
-    - Выходные данные — вывод в консоль (console.log, print) или на HTML-страницу (если это фронтенд-задача)."""
-
-    structure = """
-    Структура ответа должна быть строго в следующем формате:
-
-    [
-    {
-        "title": "Название задачи",
-        "content": "подробное и понятное описание задачи на русском языке",
-        "input_data": "формат ввода",
-        "output_data": "что должна вернуть программа"
-    },
-    [
-        ["пример входных данных первого теста", "пример выходных данных первого теста"],
-        ["пример входных данных второго теста", "пример выходных данных второго теста"],
-        ...
-    ],
-    ]
-    
-    Важные правила:
-    
-    1)Отвечай только массивом из словарей, без каких-либо дополнительных пояснений, приветствий или заключений.
-    2)Используй html тэги и bootstrap стили внутри полей "content".
-    3)Все блоки должны быть на русском языке.
-    4)Содержание должно быть точным, структурированным и педагогически продуманным.
-    5)Избегай чрезмерно сложного жаргона, если это не обязательно для темы.
-    6)В поле "content" не пиши формат для входных и выходных данных
-    7)Не пиши решение задачи. Только задачу.
-    8)В полях input_data и output_data пиши только описание формата входных и выходных данных и их ограничений
-    9)Не пиши такой текст который будет вызывать ошибку JSON.parse в javascript
-    """
-    question = prompt + structure
+    question = GENERATE_TASK % (technology, theory.title, strip_tags(theory.text))
     answer = json.loads(chat(question))
     task_info = answer[0]
     tests_info = answer[1]
@@ -280,12 +180,15 @@ def profile(request, username):
     else:
         form = ProfileUpdateForm(instance=profile_instance)
 
+    user_stats = UserStats.objects.get(user=request.user)
+
     context = {
         "profile_user": user,
         "form": form,
         "count_of_decided_tasks": count_of_decided_tasks,
         "count_of_undecided_tasks": count_of_undecided_tasks,
-
+        "complete_streak": user_stats.complete_seria,
+        "max_seria": user_stats.max_seria,
     }
     return render(request, "profile.html", context)
 
@@ -300,11 +203,24 @@ def user_login(request):
             user = authenticate(request, username=username, password=password)
             if user is not None:
                 login(request, user)
+                if UserStats.objects.filter(user=request.user).exists():
+                    user_stats = UserStats.objects.get(user=request.user)
+                    task_complete_date = user_stats.last_task_complete_date
+                    if task_complete_date is None or not is_yesterday(task_complete_date):
+                        user_stats.complete_seria = 0
+                        user_stats.save(update_fields=["complete_seria"])
+                else:
+                    UserStats.objects.create(user=request.user)
                 return redirect('home')
         context["error"] = "неверный логин или пароль"
     context["form"] = LoginForm()
     return render(request, "login.html", context)
 
+def is_yesterday(date):
+    """Проверяет, была ли дата вчера"""
+    today = datetime.now().date()
+    yesterday = today - timedelta(days=1)
+    return date.date() == yesterday
 
 def user_logout(request):
     logout(request)
@@ -404,6 +320,12 @@ def check_code(request):
         course_id = json.loads(request.body)["course_id"]
         course = Course.objects.get(id=course_id)
         update_course_progress(course, request.user)
+        user_stat = UserStats.objects.get(user=request.user)
+        task_complete_date = user_stat.last_task_complete_date
+        if task_complete_date is None or is_yesterday(task_complete_date):
+            user_stat.complete_seria += 1
+        user_stat.last_task_complete_date = datetime.now().date()
+        user_stat.save(update_fields=["last_task_complete_date", "complete_seria"])
     attempts = Attempt.objects.filter(task=task)
     return JsonResponse({"attempts": json.dumps(list(attempts[:5].values()), default=str)})
 

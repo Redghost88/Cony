@@ -6,33 +6,47 @@
 {% block extra_css %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 {% endblock %}
 {% block content %}
-<div class="text-block col-lg-3">
-    <div class="profile-avatar">
-        {% if user.profile.avatar.url %}
-        <img src="{{ user.profile.avatar.url }}" alt="Аватар" class="avatar-image">
-        {% else %}
-        <img src="{% static 'images/def_icon.png' %}" alt="Стандартный аватар" class="avatar-image">
+<div class="row">
+    <div class="text-block col-lg-3">
+        <div class="profile-avatar">
+            {% if user.profile.avatar.url %}
+            <img src="{{ user.profile.avatar.url }}" alt="Аватар" class="avatar-image">
+            {% else %}
+            <img src="{% static 'images/def_icon.png' %}" alt="Стандартный аватар" class="avatar-image">
+            {% endif %}
+        </div>
+        <h4>{{ profile_user.username }}</h4>
+        <p>
+            Аккаунт создан:<br>
+            {{ profile_user.date_joined }}
+        </p>
+
+        {% if request.user == profile_user %}
+        <div class="d-grid gap-2">
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button class="btn btn-outline-light" type="submit">Загрузить аватарку</button>
+            </form>
+        </div>
         {% endif %}
     </div>
-    <h4>{{ profile_user.username }}</h4>
-    <p>
-        Аккаунт создан:<br>
-        {{ profile_user.date_joined }}
-    </p>
-
-    {% if request.user == profile_user %}
-    <div class="d-grid gap-2">
-        <form method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button class="btn btn-outline-light" type="submit">Загрузить аватарку</button>
-        </form>
+    <div class="col">
+        <div class="text-block col-3">
+            <div class="text-center mb-4">
+                <i class="bi bi-fire" style="font-size: 3.2rem; color: #FF9600;"></i>
+                <div class="streak-number mt-2">{{ complete_streak }}</div>
+                <p>дней подряд</p>
+                <p>максимальная серия {{ max_seria }}</p>
+            </div>
+        </div>
     </div>
-    {% endif %}
 
 </div>
+
 <body>
 <div class="text-block col-lg-3">
     <h5>Статистика задач</h5>
@@ -40,10 +54,10 @@
         <canvas id="taskChart" width="200" height="200"></canvas>
     </div>
     <div class="legend">
-        <div><span class="legend-color" style="background: #10b981;"></span> Решено</div>
-        <div><span class="legend-color" style="background: #f97316;"></span> Осталось</div>
+        <div><span class="legend-color" style="background: #22c55e;"></span> Решено</div>
+        <div><span class="legend-color" style="background: #FF4B4B;"></span> Осталось</div>
     </div>
-    <div class="stats" id="statsArea"></div>
+    <div class="stats_profile" id="statsArea"></div>
 </div>
 
 <script>
@@ -56,7 +70,7 @@
     let chart;
 
     function updateStats(solved, unsolved) {
-        const total = solved + unsolved;
+        const total = parseInt(solved) + parseInt(unsolved);
         const percent = total === 0 ? 0 : (solved / total * 100).toFixed(1);
         document.getElementById('statsArea').innerHTML = `
             📋 Всего задач: <strong>${total}</strong><br>
@@ -65,7 +79,7 @@
     }
 
     function renderChart(solved, unsolved) {
-        const total = solved + unsolved;
+        const total = parseInt(solved) + parseInt(unsolved);
         if (chart) chart.destroy();
 
         if (total === 0) {
@@ -87,7 +101,7 @@
                 labels: ['Решённые', 'Нерешённые'],
                 datasets: [{
                     data: [solved, unsolved],
-                    backgroundColor: ['#10b981', '#f97316'],
+                    backgroundColor: ['#22c55e', '#FF4B4B'],
                     borderWidth: 1.5
                 }]
             },

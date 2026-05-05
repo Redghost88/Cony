@@ -76,6 +76,7 @@
             <br>
             <div class="row">
                 <div class="col">
+                    {% if task.task_content %}
                     <form onsubmit="event.preventDefault(); send_code()">
                         <button type="submit" class="btn btn-primary">▶ Отправить код</button>
                     </form>
@@ -84,6 +85,7 @@
                     <form onsubmit="event.preventDefault(); upgrade_solution()">
                         <button type="submit" class="btn btn-success">✨ Улучшить код</button>
                     </form>
+                    {% endif %}
                     {% endif %}
                 </div>
                 <div class="col">

@@ -101,3 +101,21 @@ class Attempt(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+
+class UserStats(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    complete_seria = models.IntegerField(default=0)
+    max_seria = models.IntegerField(default=0)
+    last_task_complete_date = models.DateTimeField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        self.max_seria = max(self.complete_seria, self.max_seria)
+
+        update_fields = kwargs.get('update_fields', None)
+        if update_fields is not None and 'complete_seria' in update_fields:
+            if 'max_seria' not in update_fields:
+                update_fields = set(update_fields)
+                update_fields.add('max_seria')
+                kwargs['update_fields'] = list(update_fields)
+
+        super().save(*args, **kwargs)
