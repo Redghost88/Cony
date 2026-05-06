@@ -4,14 +4,9 @@
 
 import json
 import subprocess
-from asyncio import current_task
-from email.policy import default
 
-from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
-from django.core.serializers import serialize
-from django.core.serializers.json import DjangoJSONEncoder
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import JsonResponse
-from django.shortcuts import render
 from django.contrib.auth import authenticate, login, logout
 from django.utils.html import strip_tags
 from django.views.decorators.http import require_http_methods
@@ -108,7 +103,8 @@ def create_chapter(course: Course, name: str, order: int) -> Chapter:
 
 
 def generate_theory(chapter_name: str, technology: str) -> list:
-    question = GENERATE_THEORY + STYLE_RULES + "\n Название главы:" + chapter_name + ", Название технологии:" + technology
+    prompt = GENERATE_THEORY + STYLE_RULES
+    question = prompt + "\n Название главы:" + chapter_name + ", Название технологии:" + technology
     answer = chat(question)
     return json.loads(answer)
 
@@ -219,11 +215,13 @@ def user_login(request):
     context["form"] = LoginForm()
     return render(request, "login.html", context)
 
+
 def is_yesterday(date):
     """Проверяет, была ли дата вчера"""
     today = datetime.now().date()
     yesterday = today - timedelta(days=1)
     return date.date() == yesterday
+
 
 def user_logout(request):
     logout(request)
@@ -270,7 +268,6 @@ def course_page(request, course_id, chapter_id, task_id):
             task = Task.objects.create(theory=theory, user=request.user)
     attempts = []
     last_attempt = None
-    code = ""
     if task:
         try:
             attempts = Attempt.objects.filter(task=task)

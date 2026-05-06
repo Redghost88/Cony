@@ -2,9 +2,6 @@ import os
 import subprocess
 import sys
 import tempfile
-
-from django.db.models import Model
-
 from .models import Attempt, Test
 
 

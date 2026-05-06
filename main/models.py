@@ -107,6 +107,7 @@ class Attempt(models.Model):
     class Meta:
         ordering = ["-created_at"]
 
+
 class UserStats(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     complete_seria = models.IntegerField(default=0)

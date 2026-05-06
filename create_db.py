@@ -1,12 +1,11 @@
 import os
 import django
 from django.utils import timezone
+from django.contrib.auth.models import User
+from main.models import Course, Chapter, Task, Test, Theory
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "cony.settings")
 django.setup()
-
-from django.contrib.auth.models import User
-from main.models import Course, Chapter, Task, Test, Theory
 
 # Создаём пользователей
 alice = User.objects.create_user(username="alice", email="alice@example.com", password="alicepass")
