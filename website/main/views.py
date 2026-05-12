@@ -278,6 +278,7 @@ def profile(request, username):
     else:
         form = ProfileUpdateForm(instance=profile_instance)
 
+    check_user_seria(request.user)
     user_stats = UserStats.objects.get(user=request.user)
 
     context = {
@@ -326,17 +327,21 @@ def user_login(request):
             if user is not None:
                 login(request, user)
                 if UserStats.objects.filter(user=request.user).exists():
-                    user_stats = UserStats.objects.get(user=request.user)
-                    task_complete_date = user_stats.last_task_complete_date
-                    if task_complete_date is None or not is_yesterday(task_complete_date):
-                        user_stats.complete_seria = 0
-                        user_stats.save(update_fields=["complete_seria"])
+                    check_user_seria(request.user)
                 else:
                     UserStats.objects.create(user=request.user)
                 return redirect("home")
         context["error"] = "неверный логин или пароль"
     context["form"] = LoginForm()
     return render(request, "login.html", context)
+
+
+def check_user_seria(user):
+    user_stats = UserStats.objects.get(user=user)
+    task_complete_date = user_stats.last_task_complete_date
+    if task_complete_date is None or not is_yesterday(task_complete_date):
+        user_stats.complete_seria = 0
+        user_stats.save(update_fields=["complete_seria"])
 
 
 def is_yesterday(date):

@@ -2,7 +2,7 @@ import os
 import django
 from django.utils import timezone
 from django.contrib.auth.models import User
-from main.models import Course, Chapter, Task, Test, Theory
+from website.main.models import Course, Chapter, Task, Test, Theory
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "cony.settings")
 django.setup()
