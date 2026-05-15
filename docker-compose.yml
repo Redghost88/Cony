@@ -15,6 +15,7 @@ services:
     volumes:
       - ./website:/app
       - ./website/main/static:/app/static
+      - static_volume:/app/staticfiles
     networks:
       - cony_network
     depends_on:
@@ -63,6 +64,9 @@ services:
       - ./nginx:/etc/nginx/conf.d
       - ./website/main/static:/app/static:ro
       - ./website/media:/app/media:ro
+      - static_volume:/app/staticfiles:ro
+    depends_on:
+      - cony
   redis:
     image: redis:7-alpine
     networks:
@@ -100,3 +104,4 @@ networks:
 
 volumes:
   postgres_data:
+  static_volume:
