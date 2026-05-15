@@ -1,5 +1,5 @@
 .venv
-db.sqlite3
+website/db.sqlite3
 .env
 
 # Created by https://www.toptal.com/developers/gitignore/api/pycharm,visualstudiocode,django,redis,linux
@@ -12,9 +12,10 @@ db.sqlite3
 __pycache__/
 **/__pycache__/**
 local_settings.py
-db.sqlite3
+website/db.sqlite3
 db.sqlite3-journal
 media
+static
 .vscode/
 
 # If your build process includes running collectstatic, then you probably don't need or want to include staticfiles/
@@ -87,7 +88,7 @@ instance/
 .scrapy
 
 # Sphinx documentation
-docs/_build/
+website/docs/_build/
 
 # PyBuilder
 .pybuilder/

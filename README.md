@@ -5,29 +5,22 @@
 2. Открыть проект в PyCharm с наcтройками по умолчанию
 3. Создать виртуальное окружение (через settings -> project "cony" -> project interpreter)
 4. Открыть терминал в PyCharm, проверить, что виртуальное окружение активировано.
-5. Обновить pip:
-   ```bash
-   sudo apt install python3-venv
-   ```
-6. Установить в виртуальное окружение необходимые пакеты: 
-   ```bash
-   pip install -r requirements.txt
-   ```
-7. Синхронизировать структуру базы данных с моделями: 
-   ```bash
-   python manage.py migrate
-   ```
-8. Заполнить базу данных тестовыми данными: 
-   ```bash
-   python create_db.py
-   ```
-9. Создать свой ключ от нейросети: 
+5. Создать свой ключ от нейросети: 
    - открыть сайт https://openrouter.ai/
    - нажать "Get api key"
    - нажать "Create"
    - копируете ключ и вставляете его в поле OPENROUTER_KEY файла .env
-
-10. Создать docker образ:
+6. Обновить pip:
    ```bash
-   docker build . -t cony:0.1
+   sudo apt install python3-venv
+   ```
+7. Запустить докер образы
+   ```bash
+   docker compose up --build -d 
+   ```
+8. Синхронизировать структуру базы данных и статики: 
+   ```bash
+   docker compose exec cony python manage.py migrate
+   docker compose run --rm cony python manage.py migrate django_celery_results
+   docker compose exec cony python manage.py collectstatic --noinput   
    ```

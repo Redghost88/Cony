@@ -23,6 +23,7 @@ tasks:
         script:
           - python -m pip install --upgrade pip
           - pip install pycodestyle 
+          - cd website
           - pycodestyle --max-line-length=120 .
 
   - name: build-docs
@@ -31,14 +32,14 @@ tasks:
         image: python:3.12-slim
         script:
           - python -m pip install --upgrade pip
-          - pip install -r requirements.txt
+          - pip install -r website/requirements.txt
           - pip install sphinx sphinx-rtd-theme
-          - cd docs
+          - cd website/docs
           - apt-get update
           - apt-get install -y make
           - make html
         artifacts:
           paths: 
-           - docs/build/html
+           - website/docs/build/html
 
 

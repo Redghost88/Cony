@@ -1,0 +1,102 @@
+services:
+  cony:
+    build:
+      context: ./website
+      dockerfile: Dockerfile
+    image: cony
+    container_name: cony
+    command: ["gunicorn", "-c", "gunicorn.py", "cony.wsgi"]
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    links:
+      - "postgres:dbps"
+    volumes:
+      - ./website:/app
+      - ./website/main/static:/app/static
+    networks:
+      - cony_network
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+  postgres:
+    image: postgres:17-alpine
+    container_name: psgr
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${DATABASE_NAME}
+      - POSTGRES_USER=${DATABASE_USERNAME}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+    networks:
+      - cony_network
+    restart: unless-stopped
+  #adminer:
+  #  image: adminer
+  #  container_name: adminer
+  #  ports:
+  #    - "8080:8080"
+  #  links:
+  #    - "postgres:db"
+  #  networks:
+  #    - cony_network
+  #  depends_on:
+  #    - postgres
+  #  restart: unless-stopped
+  nginx:
+    image: nginx:latest
+    container_name: nginx-server
+    restart: unless-stopped
+    networks:
+      - cony_network
+    expose:
+      - 80
+    ports:
+      - "80:80"
+    volumes:
+      - ./website/logs:/app/logs
+      - ./nginx:/etc/nginx/conf.d
+      - ./website/main/static:/app/static:ro
+      - ./website/media:/app/media:ro
+  redis:
+    image: redis:7-alpine
+    networks:
+      - cony_network
+    restart: always
+  worker:
+    build:
+      context: ./website
+      dockerfile: Dockerfile
+    command: celery -A cony worker --loglevel=info --concurrency=4
+    working_dir: /app
+    user: root
+    volumes:
+      - ./website:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp:/tmp
+    environment:
+      - DJANGO_SETTINGS_MODULE=cony.settings
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - DOCKER_GID=999
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - cony_network
+    restart: always
+
+
+
+networks:
+  cony_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
