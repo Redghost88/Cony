@@ -1,3 +1,7 @@
+"""
+Запросы и получение ответа от AI агента
+"""
+
 from openai import OpenAI
 from cony.settings import OPEN_ROUTER_API_TOKEN
 

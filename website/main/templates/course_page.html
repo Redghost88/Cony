@@ -158,11 +158,11 @@
 
 
     document.addEventListener("DOMContentLoaded", function () {
-        task_title.innerHTML = '{{ task.title|escapejs|safe }}'
-        task_text_cont.innerHTML = '{{ task.task_content|escapejs|safe }}'
-        task_input.innerHTML = '{{ task.input_data|escapejs|safe }}'
-        task_output.innerHTML = '{{ task.output_data|escapejs|safe }}'
-        task_io_example.innerHTML = '{{ tests.0.input_data }} | {{ tests.0.output_data }}'
+        task_title.innerHTML = `{{ task.title|escapejs }}`
+        task_text_cont.innerHTML = `{{ task.task_content|escapejs }}`
+        task_input.innerHTML = `{{ task.input_data|escapejs }}`
+        task_output.innerHTML = `{{ task.output_data|escapejs }}`
+        task_io_example.innerHTML = `{{ tests.0.input_data|escapejs }} | {{ tests.0.output_data|escapejs }}`
         show_attemts('{{ attempts|escapejs }}')
         if (task_generated == "False" && GENERATE_TASKS) {
             generate_task()
@@ -206,18 +206,26 @@
                 })
     }
 
-    function show_attemts(attempts) {
+    function show_attemts(attemptsStr) {
         attempt_results.innerHTML = ''
-        let index = JSON.parse(attempts).length
-        for (const a of JSON.parse(attempts)) {
-            attempt_results.innerHTML += `<div class="accordion-item">
+
+        const attempts = typeof attemptsStr === 'string' ? JSON.parse(attemptsStr) : attemptsStr
+        if (!Array.isArray(attempts)) return
+
+        let index = attempts.length
+        for (const a of attempts) {
+            if(a.status === 'running' || a.status === 'pending'){
+                getStatus(a.id)
+            }
+            const expandClass = (index == attempts.length) ? 'show' : ''
+            attempt_results.innerHTML += `<div class="accordion-item" style="width:650px">
                     <h2 class="accordion-header">
-                        <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                                 data-bs-target="#collapseOne${a.id}" aria-expanded="false" aria-controls="collapseOne">
-                                Посылка ${index--}
+                                Посылка ${index--} ${a.status}
                         </button>
                     </h2>
-                    <div id="collapseOne${a.id}" class="accordion-collapse collapse show" data-bs-parent="#accordionExample">
+                    <div id="collapseOne${a.id}" class="accordion-collapse collapse ${expandClass}" data-bs-parent="#accordionExample">
                         <div class="accordion-body">
                             Время: ${a.created_at}
                             <pre>${a.source_code}</pre>
@@ -241,20 +249,63 @@
         )
                 .then(response => response.json())
                 .then(data => {
-                    console.log(data.attempts)
+                    console.log('send', data.attempts)
                     show_attemts(data.attempts)
                 })
     }
+
     function upgrade_solution() {
-        const theory_text = '{{ theory.text|safe }}'
-        const task_text = '{{ task.task_content|escapejs|safe }}'
+        const theory_text = '{{ theory.text|escapejs }}'
+        const task_text = '{{ task.task_content|escapejs }}'
         let solution = ""
         if('{{ last_attempt }}') {
-            solution = '{{ last_attempt.source_code|escapejs|safe }}'
+            solution = '{{ last_attempt.source_code|escapejs }}'
         }
         const invisible_msg_text = `Мне дана теория ${theory_text}. У меня есть задача: ${task_text}. Я успешно решил задачу вот так: ${solution}. Напиши краткий ответ 100-200 слов`
         const msg_text = "Как улучшить мое решение?"
         sendMessage(msg_text, invisible_msg_text)
+    }
+
+    function getStatus(attemptId) {
+        let attempts = 0;
+        const maxAttempts = 10;
+
+        const interval = setInterval(async () => {
+            attempts++;
+            try {
+                const res = await fetch(`/attempt_status/${attemptId}/`);
+                
+                const contentType = res.headers.get('content-type');
+                if (!res.ok || !contentType?.includes('application/json')) {
+                    const text = await res.text();
+                    console.error('Сервер вернул не JSON:', text.substring(0, 200));
+                    clearInterval(interval)  
+                    return;
+                }
+
+                const data = await res.json();
+                if (data.status === 'finished' || data.status === 'error') {
+                    clearInterval(interval)                    
+                    getAttempts()
+                    return
+                }
+            } catch (eror) {
+                console.error('Polling error', eror);
+            }
+
+            if (attempts >= maxAttempts) {
+                clearInterval(interval)  
+                console.error(`Too many attempts to get status ${attemptId}`);
+            }
+        }, 1500)
+    }
+
+    function getAttempts() {
+        fetch(`/get_attempts/{{ task.id }}/?t=${Date.now()}`)
+            .then(response => response.json())
+            .then(data => {
+                show_attemts(data.attempts)
+            })
     }
 </script>
 {% endblock %}

@@ -3,26 +3,28 @@
 """
 
 import json
-import subprocess
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import JsonResponse
 from django.contrib.auth import authenticate, login, logout
 from django.utils.html import strip_tags
 from django.views.decorators.http import require_http_methods
-
-from datetime import datetime, timedelta
-from main.ai_agent import chat
-from main.code_checker import check_attempt
-from main.forms import ProfileUpdateForm, LoginForm, RegisterForm
-from main.models import Chapter, Course, Profile, Task, Test, Theory, Attempt, UserStats
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 
-from main.prompts import STYLE_RULES, GENERATE_THEORY, GENERATE_TASK
-
-# Create your views here.
+from main.ai_agent import chat
+from main.forms import ProfileUpdateForm, LoginForm, RegisterForm
+from main.models import Chapter, Course, Profile, Task, Test, Theory, Attempt, UserStats
+from main.tasks import send_attempt, test_user_code
+from main.utils import clean_duplicate_theories, is_yesterday, update_course_progress
+from main.prompts import (
+    CHAT_SETTINGS,
+    GENERATE_COURSE,
+    STYLE_RULES,
+    GENERATE_THEORY,
+    GENERATE_TASK,
+)
 
 
 def home(request):
@@ -42,7 +44,9 @@ def home(request):
             [
                 course,
                 course.current_chapter_number,
-                Chapter.objects.get(course=course, order=course.current_chapter_number).current_theory_number,
+                Chapter.objects.get(
+                    course=course, order=course.current_chapter_number
+                ).current_theory_number,
             ]
         )
 
@@ -95,22 +99,22 @@ def create_course(request):
 
 def create_chapter(course: Course, name: str, order: int) -> Chapter:
     """
-        Создает новую главу в рамках указанного курса.
+    Создает новую главу в рамках указанного курса.
 
-        Аргументы:
-            course (Course): Экземпляр модели Course, к которому будет привязана глава.
-            name (str): Название главы.
-            order (int): Порядковый номер главы в курсе (используется для сортировки).
+    Аргументы:
+        course (Course): Экземпляр модели Course, к которому будет привязана глава.
+        name (str): Название главы.
+        order (int): Порядковый номер главы в курсе (используется для сортировки).
 
-        Логика работы:
-            1. Инициализирует новый объект модели Chapter.
-            2. Устанавливает связь с родительским курсом.
-            3. Назначает заголовок и очередность отображения.
-            4. Сохраняет запись в базе данных.
+    Логика работы:
+        1. Инициализирует новый объект модели Chapter.
+        2. Устанавливает связь с родительским курсом.
+        3. Назначает заголовок и очередность отображения.
+        4. Сохраняет запись в базе данных.
 
-        Возвращает:
-            Chapter: Созданный и сохраненный объект главы.
-        """
+    Возвращает:
+        Chapter: Созданный и сохраненный объект главы.
+    """
     new_chapter = Chapter()
     new_chapter.course = course
     new_chapter.title = name
@@ -121,33 +125,28 @@ def create_chapter(course: Course, name: str, order: int) -> Chapter:
 
 def generate_theory(chapter_name: str, technology: str) -> list:
     """
-        Генерирует структурированный учебный контент (теорию) с помощью искусственного интеллекта.
+    Генерирует структурированный учебный контент с использованием AI.
 
-        Функция формирует подробный промпт для языковой модели, отправляет запрос
-        и преобразует полученный текстовый ответ в формат Python-списка.
+    Формирует промпт, отправляет запрос к нейросети и парсит ответ в список словарей.
 
-        Аргументы:
-            chapter_name (str): Название главы курса (например, "Декораторы в Python").
-            technology (str): Изучаемая технология или язык программирования (например, "Python").
+    Args:
+        chapter_name (str): Название учебной темы.
+        technology (str): Изучаемая технология (например, 'Python').
 
-        Логика работы:
-            1. Формирует системную инструкцию (prompt), описывающую роль ИИ, требования к контенту и формату.
-            2. Устанавливает строгие правила форматирования: 5–8 блоков, использование HTML/Bootstrap,
-               отсутствие спецсимволов (\n, \t) и строгий JSON-формат.
-            3. Объединяет промпт, глобальные правила стилей (STYLE_RULES) и входные параметры.
-            4. Вызывает внешнюю функцию `chat(question)` для получения ответа от нейросети.
-            5. Десериализует строку ответа в список словарей с помощью `json.loads`.
+    Returns:
+        list: Список словарей с ключами 'title' и 'content'.
 
-        Возвращает:
-            list: Список словарей, где каждый словарь содержит ключи:
-                - "title": Заголовок теоретического блока.
-                - "content": Текст блока с HTML-разметкой и Bootstrap-стилями.
-
-        Исключения:
-            json.JSONDecodeError: Может возникнуть, если ИИ вернул некорректный JSON или лишний текст.
+    Raises:
+        json.JSONDecodeError: Если ответ от AI не является валидным JSON.
     """
     prompt = GENERATE_THEORY + STYLE_RULES
-    question = prompt + "\n Название главы:" + chapter_name + ", Название технологии:" + technology
+    question = (
+        prompt
+        + "\n Название главы:"
+        + chapter_name
+        + ", Название технологии:"
+        + technology
+    )
     answer = chat(question)
     return json.loads(answer)
 
@@ -155,38 +154,16 @@ def generate_theory(chapter_name: str, technology: str) -> list:
 @require_http_methods(["POST"])
 def generate_tasks(request) -> JsonResponse:
     """
-        Интеллектуальный генератор практических задач на основе теоретического блока.
+    Генерирует практическую задачу и тесты на основе теоретического блока через AI.
 
-        Функция использует AI для создания уникального задания, которое закрепляет
-        конкретную теорию, автоматически создаёт тесты и обновляет данные в БД.
+    Извлекает ID теории и задачи, удаляет старые тесты, формирует промпт,
+    парсит ответ AI и сохраняет новую задачу с тестовыми случаями в БД.
 
-        Аргументы:
-            request (HttpRequest): Объект запроса, содержащий JSON:
-                - technology (str): Язык или стек технологий (например, 'Python', 'JS').
-                - theory (int/str): ID объекта Theory, по которому генерируется задача.
-                - task (int/str): ID объекта Task, в который будут записаны данные.
+    Args:
+        request (HttpRequest): POST-запрос с JSON: {'technology': str, 'theory': int, 'task': int}.
 
-        Логика работы:
-            1. Извлечение контекста: Получает объекты теории и задачи. Очищает старые тесты,
-                если задача уже была сгенерирована ранее (флаг is_generated).
-            2. Формирование запроса к AI: Создает сложный промпт, включающий очищенный
-                от HTML-тегов текст теории и строгие требования к формату (JSON, Bootstrap-стили).
-            3. Обработка ответа: Парсит JSON-ответ от нейросети, который должен содержать
-                текст задачи и массив тестовых случаев.
-            4. Сохранение данных:
-                - Обновляет поля объекта Task (заголовок, содержание, форматы ввода/вывода).
-                - Создает записи в таблице Test для автоматической проверки кода в будущем.
-            5. Ответ клиенту: Формирует JSON с данными новой задачи и списком тестов для UI.
-
-        Контекст JSON-ответа:
-            - task_title (str): Название задачи.
-            - task_text (str): Условие (HTML/Bootstrap).
-            - input_data (str): Описание формата ввода.
-            - output_data (str): Описание ожидаемого вывода.
-            - tests (list): Список словарей с примерами [вход, выход].
-
-        Возвращает:
-            JsonResponse: Данные для динамического обновления страницы курса.
+    Returns:
+        JsonResponse: Данные новой задачи и списка тестов для фронтенда.
     """
     request_body = json.loads(request.body)
     technology = request_body.get("technology")
@@ -215,11 +192,48 @@ def generate_tasks(request) -> JsonResponse:
     }
     tests = []
     for i in range(len(tests_info)):
-        test = Test.objects.create(task=task, input_data=tests_info[i][0], output_data=tests_info[i][1], order=i)
+        test = Test.objects.create(
+            task=task,
+            input_data=tests_info[i][0],
+            output_data=tests_info[i][1],
+            order=i,
+        )
         tests.append({"input_data": test.input_data, "output_data": test.output_data})
     response["tests"] = tests
 
     return JsonResponse(response)
+
+
+def generate_course(request):
+    """
+    Генерирует структуру курса на основе пользовательского запроса.
+
+    Args:
+        request (HttpRequest): GET-запрос с параметром 'question'.
+
+    Returns:
+        JsonResponse: JSON-ответ с полем 'answer', содержащим сгенерированный контент.
+    """
+    question = GENERATE_COURSE + request.GET.get("question", "")
+    context = {"answer": chat(question)}
+    return JsonResponse(context)
+
+
+def generate_chat_answer(request):
+    """
+    Отвечает на вопрос пользователя в чате, используя системные инструкции AI.
+
+    Args:
+        request (HttpRequest): POST-запрос с JSON: {'question': str}.
+
+    Returns:
+        JsonResponse: JSON-ответ с полем 'answer'.
+    """
+    request_body = json.loads(request.body)
+    question = CHAT_SETTINGS + "\n" + request_body.get("question", "")
+    print(question)
+    context = {"answer": chat(question)}
+    return JsonResponse(context)
 
 
 def generate_answer(request):
@@ -244,31 +258,23 @@ def generate_answer(request):
 
 def profile(request, username):
     """
-        Отображает страницу профиля пользователя и обрабатывает обновление данных профиля.
+    Отображает страницу профиля пользователя и обрабатывает обновление данных.
 
-        Аргументы:
-            request (HttpRequest): Объект запроса Django.
-            username (str): Имя пользователя, профиль которого запрашивается.
+    Args:
+        request (HttpRequest): HTTP-запрос.
+        username (str): Имя пользователя, чей профиль просматривается.
 
-        Логика работы:
-            1. Извлекает целевого пользователя по 'username' или возвращает 404.
-            2. Получает или создает объект Profile для ТЕКУЩЕГО авторизованного пользователя.
-            3. Считает количество задач текущего пользователя со статусом 'decided=True'.
-            4. Если метод POST: валидирует и сохраняет форму ProfileUpdateForm для текущего пользователя.
-            5. Если метод GET: инициализирует форму текущими данными профиля.
-
-        Контекст шаблона:
-            profile_user (User): Объект пользователя, чья страница просматривается.
-            form (ProfileUpdateForm): Форма редактирования профиля авторизованного пользователя.
-            count_of_decided_tasks (int): Количество решенных задач авторизованным пользователем.
-
-        Возвращает:
-            HttpResponse: Отрисованный шаблон "profile.html".
-        """
+    Returns:
+        HttpResponse: Отрендеренная страница 'profile.html' с формой и статистикой.
+    """
     user = get_object_or_404(User, username=username)
     profile_instance, created = Profile.objects.get_or_create(user=request.user)
-    count_of_decided_tasks = Task.objects.filter(user=request.user, decided=True).count()
-    count_of_undecided_tasks = Task.objects.filter(user=request.user, decided=False).count()
+    count_of_decided_tasks = Task.objects.filter(
+        user=request.user, decided=True
+    ).count()
+    count_of_undecided_tasks = Task.objects.filter(
+        user=request.user, decided=False
+    ).count()
 
     if request.method == "POST":
         form = ProfileUpdateForm(request.POST, request.FILES, instance=profile_instance)
@@ -294,29 +300,14 @@ def profile(request, username):
 
 def user_login(request):
     """
-        Обрабатывает аутентификацию пользователей и вход в систему.
+    Обрабатывает аутентификацию пользователя и вход в систему.
 
-        Аргументы:
-            request (HttpRequest): Объект запроса Django.
+    Args:
+        request (HttpRequest): HTTP-запрос с данными формы входа.
 
-        Логика работы:
-            1. Инициализирует пустой контекст.
-            2. При POST-запросе:
-               - Проверяет валидность данных формы LoginForm.
-               - Пытается аутентифицировать пользователя через стандартный механизм Django.
-               - При успешной проверке: осуществляет вход (создание сессии) и перенаправляет на 'home'.
-               - При ошибке (неверные данные или невалидная форма): добавляет сообщение об ошибке в контекст.
-            3. При GET-запросе или неудачном входе:
-               - Создает чистый экземпляр формы LoginForm.
-            4. Отрисовывает шаблон "login.html" с формой и (возможно) текстом ошибки.
-
-        Контекст шаблона:
-            form (LoginForm): Форма для ввода учетных данных.
-            error (str, optional): Сообщение о неудачной попытке входа.
-
-        Возвращает:
-            HttpResponse: Страница входа или перенаправление на главную.
-        """
+    Returns:
+        HttpResponse: Редирект на главную страницу или страница логина с ошибкой.
+    """
     context = {}
     if request.method == "POST":
         form = LoginForm(request.POST)
@@ -337,6 +328,7 @@ def user_login(request):
 
 
 def check_user_seria(user):
+    """Проверяет не закончилась ли серия пользователя"""
     user_stats = UserStats.objects.get(user=user)
     task_complete_date = user_stats.last_task_complete_date
     if task_complete_date is None or not is_yesterday(task_complete_date):
@@ -344,57 +336,35 @@ def check_user_seria(user):
         user_stats.save(update_fields=["complete_seria"])
 
 
-def is_yesterday(date):
-    """Проверяет, была ли дата вчера"""
-    today = datetime.now().date()
-    yesterday = today - timedelta(days=1)
-    return date.date() == yesterday
-
-
 def user_logout(request):
     """
-        Завершает текущую сессию пользователя и выполняет выход из системы.
+    Завершает текущую сессию пользователя и выполняет выход из системы.
 
-        Аргументы:
-            request (HttpRequest): Объект запроса Django.
+    Аргументы:
+        request (HttpRequest): Объект запроса Django.
 
-        Логика работы:
-            1. Вызывает стандартную функцию Django `logout()`, которая удаляет ID пользователя
-               из текущей сессии и очищает данные сессии.
-            2. После успешного выхода перенаправляет пользователя на страницу входа.
+    Логика работы:
+        1. Вызывает стандартную функцию Django `logout()`, которая удаляет ID пользователя
+           из текущей сессии и очищает данные сессии.
+        2. После успешного выхода перенаправляет пользователя на страницу входа.
 
-        Возвращает:
-            HttpResponseRedirect: Перенаправление на именованный URL-адрес 'login'.
-        """
+    Возвращает:
+        HttpResponseRedirect: Перенаправление на именованный URL-адрес 'login'.
+    """
     logout(request)
     return redirect("login")
 
 
 def registration(request):
     """
-       Обрабатывает регистрацию новых пользователей.
+    Обрабатывает регистрацию нового пользователя с последующим автоматическим входом.
 
-       Аргументы:
-           request (HttpRequest): Объект запроса Django.
+    Args:
+        request (HttpRequest): HTTP-запрос с данными формы регистрации.
 
-       Логика работы:
-           1. Инициализирует пустой контекст.
-           2. При POST-запросе:
-              - Создает экземпляр формы RegisterForm с данными из запроса.
-              - Если форма валидна:
-                - Сохраняет нового пользователя в базе данных.
-                - Вызывает функцию 'user_login' (авторизация сразу после регистрации).
-                - Перенаправляет пользователя на главную страницу ('home').
-           3. При GET-запросе (или если форма невалидна):
-              - Инициализирует пустую форму RegisterForm.
-              - Отрисовывает шаблон 'registration.html'.
-
-       Контекст шаблона:
-           form (RegisterForm): Форма регистрации для ввода данных пользователя.
-
-       Возвращает:
-           HttpResponse: Страница регистрации или перенаправление после успеха.
-       """
+    Returns:
+        HttpResponse: Страница регистрации или редирект на главную.
+    """
     context = {}
     if request.method == "POST":
         form = RegisterForm(request.POST)
@@ -409,56 +379,30 @@ def registration(request):
 @login_required
 def course_page(request, course_id, chapter_id, task_id):
     """
-        Отображает страницу конкретного урока (задачи) в рамках курса и главы.
-        Управляет состоянием прогресса пользователя и синхронизирует данные задачи.
+    Отображает страницу урока: теорию, задачу, тесты и историю попыток.
 
-        Аргументы:
-            request (HttpRequest): Объект запроса Django. Требуется авторизация.
-            course_id (int): Идентификатор курса.
-            chapter_id (int): Порядковый номер (поле 'order') главы.
-            task_id (int): Порядковый номер (поле 'order') теории/задачи внутри главы.
+    Управляет прогрессом курса, очищает дубликаты теории и подготавливает
+    контекст для рендеринга интерфейса обучения.
 
-        Логика работы:
-            1. Извлекает курс, обновляет в базе текущую главу для этого курса.
-            2. Извлекает главу по номеру порядка и обновляет в ней номер текущей задачи.
-            3. Выполняет очистку данных: удаляет дубликаты блоков теории, если у них совпадает 'order'.
-            4. Работа с контентом:
-               - Получает блок теории (Theory) по номеру порядка.
-               - Пытается найти существующую задачу (Task) для текущего пользователя.
-               - Если задачи нет — создает новую (автоматическая генерация привязки к пользователю).
-            5. Работа с попытками:
-               - Извлекает все попытки решения (Attempt) текущей задачи.
-               - Формирует JSON-строку из последних 5 попыток для отображения в интерфейсе.
-            6. Прогресс: вызывает функцию `update_course_progress` для пересчета успеваемости.
+    Args:
+        request (HttpRequest): HTTP-запрос (требуется авторизация).
+        course_id (int): Идентификатор курса.
+        chapter_id (int): Порядковый номер главы.
+        task_id (int): Порядковый номер теории/задачи.
 
-        Контекст шаблона:
-            course (Course): Объект текущего курса.
-            chapters (QuerySet): Список всех глав курса для навигации.
-            chapter (Chapter): Текущая активная глава.
-            theory_blocks (QuerySet): Все блоки теории в главе.
-            theory (Theory): Текущий блок теории.
-            task (Task): Объект задачи пользователя, привязанный к теории.
-            tests (QuerySet): Тестовые данные для проверки задачи.
-            attempts (str): JSON-список с историей последних попыток.
-            last_attempt (Attempt): Самая свежая попытка решения.
-
-        Возвращает:
-            HttpResponse: Отрисованный шаблон "course_page.html".
-        """
+    Returns:
+        HttpResponse: Отрендеренная страница 'course_page.html'.
+    """
     course = get_object_or_404(Course, id=course_id)
     course.current_chapter_number = chapter_id
     course.save()
-    chapters = Chapter.objects.filter(course=course)
+    chapters = Chapter.objects.filter(course=course).order_by("order")
     chapter = Chapter.objects.get(course=course, order=chapter_id)
     chapter.current_task_number = task_id
     chapter.save()
-    theory_blocks = Theory.objects.filter(chapter=chapter)
-    for i in range(len(theory_blocks)):
-        theory_same_order = Theory.objects.filter(chapter=chapter, order=task_id)
-        if len(theory_same_order) > 1:
-            for t in theory_same_order[1:]:
-                t.delete()
+    clean_duplicate_theories(chapter, task_id)
     theory = None
+    theory_blocks = Theory.objects.filter(chapter=chapter)
     if theory_blocks:
         theory = Theory.objects.get(chapter=chapter, order=task_id)
     task = None
@@ -496,45 +440,31 @@ def course_page(request, course_id, chapter_id, task_id):
 @require_http_methods(["POST"])
 def run_code(request):
     """
-        Выполняет произвольный Python-код, полученный через POST-запрос, в изолированном процессе.
+    Выполняет пользовательский Python-код в изолированном Docker-контейнере.
 
-        Аргументы:
-            request (HttpRequest): Объект запроса Django. Ожидает JSON в теле запроса.
-                - code (str): Исходный код на Python для выполнения.
-                - input_data (str): Входные данные, передаваемые в стандартный ввод (stdin).
+    Принимает код и входные данные, запускает асинхронную задачу Celery
+    и ожидает результат выполнения.
 
-        Логика работы:
-            1. Десериализует JSON из тела запроса.
-            2. Запускает код через системный вызов `subprocess.run` с использованием интерпретатора python.
-            3. Устанавливает лимит времени выполнения (timeout) в 5 секунд для предотвращения зависания сервера.
-            4. Перехватывает вывод (stdout) и ошибки (stderr).
-            5. Если выполнение прошло успешно, возвращает стандартный вывод.
-            6. Если возникла ошибка компиляции или выполнения, возвращает stderr, обернутый в HTML-тег для стилизации.
+    Args:
+        request (HttpRequest): POST-запрос с JSON: {'code': str, 'input_data': str}.
 
-        Возвращает:
-            JsonResponse:
-                - {"output": "результат"} в случае успеха или ошибки в коде.
-                - {"error": "текст ошибки"} в случае превышения лимита времени или системного сбоя.
-
-        Ограничения безопасности:
-            - Код выполняется с правами пользователя, запустившего веб-сервер.
-            - Отсутствует изоляция файловой системы и сетевых ресурсов (sandbox).
-        """
+    Returns:
+        JsonResponse: {'output': str} при успехе или {'error': str} при ошибке.
+    """
     request_body = json.loads(request.body)
     code = request_body.get("code")
     input_data = request_body.get("input_data")
-    code_timeout = 5
+    code_timeout = 2
     try:
-        process = subprocess.run(
-            ["python", "-c", code], input=input_data, capture_output=True, text=True, timeout=code_timeout
-        )
-        if process.stdout:
-            output = process.stdout
+        async_result = test_user_code.apply_async(
+            args=[code, input_data, code_timeout]
+        ).get(timeout=code_timeout)
+
+        if async_result["stdout"]:
+            output = async_result["stdout"]
         else:
-            output = '<div style="color: #dc3545;">' + process.stderr + "</div>"
+            output = '<div style="color: #dc3545;">' + async_result["stderr"] + "</div>"
         return JsonResponse({"output": output})
-    except subprocess.TimeoutExpired:
-        return JsonResponse({"error": f"Превышено время выполнения программы ({code_timeout} секунд)"})
     except Exception as e:
         return JsonResponse({"error": str(e)})
 
@@ -542,108 +472,73 @@ def run_code(request):
 @require_http_methods(["POST"])
 def check_code(request):
     """
-        Проверяет решение задачи, создаёт запись о попытке и обновляет прогресс пользователя.
+    Создаёт попытку решения задачи и запускает её асинхронную проверку.
 
-        Аргументы:
-            request (HttpRequest): Объект запроса, содержащий JSON:
-                - source_code (str): Исходный код решения.
-                - task_id (int): Идентификатор проверяемой задачи.
-                - course_id (int): Идентификатор курса для обновления прогресса.
+    Args:
+        request (HttpRequest): POST-запрос с JSON: {'source_code': str, 'task_id': int, 'course_id': int}.
 
-        Логика работы:
-            1. Извлекает данные из тела запроса (код, ID задачи и курса).
-            2. Создает объект Attempt (попытка) в базе данных, привязывая его к пользователю и задаче.
-            3. Вызывает функцию `check_attempt(attempt)` (предположительно, запуск тестов и сравнение вывода).
-            4. Если проверка пройдена (`attempt.passed == True`):
-               - Отмечает задачу как решенную (`decided = True`).
-               - Вызывает `update_course_progress` для пересчета общего процента прохождения курса.
-            5. Извлекает историю последних 5 попыток по данной задаче.
-
-        Возвращает:
-            JsonResponse: Список последних 5 попыток в формате JSON (сериализованный список словарей).
-        """
+    Returns:
+        JsonResponse: Список последних 5 попыток пользователя.
+    """
     code = json.loads(request.body)["source_code"]
     task_id = int(json.loads(request.body)["task_id"])
     task = Task.objects.get(id=task_id)
     attempt = Attempt.objects.create(task=task, user=request.user, source_code=code)
-    check_attempt(attempt)
-    if attempt.passed:
-        task.decided = True
-        task.save(update_fields=["decided"])
-        course_id = json.loads(request.body)["course_id"]
-        course = Course.objects.get(id=course_id)
-        update_course_progress(course, request.user)
-        user_stat = UserStats.objects.get(user=request.user)
-        task_complete_date = user_stat.last_task_complete_date
-        if task_complete_date is None or is_yesterday(task_complete_date):
-            user_stat.complete_seria += 1
-        user_stat.last_task_complete_date = datetime.now().date()
-        user_stat.save(update_fields=["last_task_complete_date", "complete_seria"])
+    course_id = json.loads(request.body)["course_id"]
+    send_attempt.delay(attempt.id, course_id)
+
     attempts = Attempt.objects.filter(task=task)
-    return JsonResponse({"attempts": json.dumps(list(attempts[:5].values()), default=str)})
+    return JsonResponse({"attempts": list(attempts[:5].values())})
 
 
-def update_course_progress(course, user) -> None:
-    """
-        Рассчитывает и обновляет общий прогресс пользователя по конкретному курсу.
+def get_task_attempts(request, task_id):
+    """Возвращает все попытки решения пользователем конкретной задачи"""
+    task = Task.objects.get(id=task_id)
+    attempts = Attempt.objects.filter(task=task)
+    return JsonResponse({"attempts": list(attempts[:5].values())})
 
-        Аргументы:
-            course (Course): Экземпляр модели курса, для которого считается прогресс.
-            user (User): Экземпляр модели пользователя, чей прогресс анализируется.
 
-        Логика расчета:
-            1. Прогресс курса складывается из прогресса каждой его главы (Chapter).
-            2. Вес каждой главы в курсе равнозначен: 1 / количество_глав.
-            3. Прогресс главы определяется как доля решенных задач (Task.decided=True),
-               привязанных к блокам теории (Theory) этой главы.
-            4. Если задача по конкретной теории решена, к прогрессу главы добавляется
-               значение: 1 / количество_блоков_теории_в_главе.
-            5. Финальный результат переводится в проценты (0-100) и округляется.
-
-        Действие:
-            Обновляет поле 'progress' в объекте 'course' и сохраняет его в базе данных.
-
-        Возвращает:
-            None
-        """
-    progress = 0
-    chapters = Chapter.objects.filter(course=course)
-    for c in chapters:
-        chapter_progress = 0.0
-        theory_blocks = Theory.objects.filter(chapter=c)
-        for t in theory_blocks:
-            if Task.objects.filter(theory=t, user=user).exists():
-                task = Task.objects.get(theory=t, user=user)
-                if task.decided:
-                    chapter_progress += 1 / len(theory_blocks)
-        progress += chapter_progress / len(chapters)
-    course.progress = round(progress * 100)
-    course.save(update_fields=["progress"])
+@require_http_methods(["GET"])
+def get_attempt_status(request, attempt_id):
+    """Возвращает текущий статус проверки."""
+    try:
+        attempt = Attempt.objects.only("status", "passed", "check_log").get(
+            id=attempt_id
+        )
+        return JsonResponse(
+            {
+                "status": attempt.status,
+                "passed": attempt.passed,
+                "check_log": attempt.check_log,
+            }
+        )
+    except Attempt.DoesNotExist:
+        return JsonResponse({"error": "Not found"})
 
 
 @require_http_methods(["POST"])
 def add_new_theory(request):
     """
-        Генерирует и сохраняет новые блоки теории для конкретной главы курса.
+    Генерирует и сохраняет новые блоки теории для конкретной главы курса.
 
-        Аргументы:
-            request (HttpRequest): Объект запроса, содержащий POST-параметры:
-                - chapter (int): ID главы, для которой создается теория.
-                - course (int): ID курса, к которому относится глава.
+    Аргументы:
+        request (HttpRequest): Объект запроса, содержащий POST-параметры:
+            - chapter (int): ID главы, для которой создается теория.
+            - course (int): ID курса, к которому относится глава.
 
-        Логика работы:
-            1. Извлекает объекты главы и курса из базы данных.
-            2. Вызывает внешнюю функцию 'generate_theory' (предположительно ИИ-генератор),
-               которая возвращает список словарей с заголовками и контентом.
-            3. Сбрасывает указатель текущей задачи главы ('current_theory_number') на 0.
-            4. В цикле создает и сохраняет новые объекты 'Theory', устанавливая им
-               порядковый номер ('order') согласно индексу в списке.
-            5. Обновляет состояние главы в базе данных.
-            6. Перенаправляет пользователя на страницу первой созданной задачи курса.
+    Логика работы:
+        1. Извлекает объекты главы и курса из базы данных.
+        2. Вызывает внешнюю функцию 'generate_theory' (предположительно ИИ-генератор),
+           которая возвращает список словарей с заголовками и контентом.
+        3. Сбрасывает указатель текущей задачи главы ('current_theory_number') на 0.
+        4. В цикле создает и сохраняет новые объекты 'Theory', устанавливая им
+           порядковый номер ('order') согласно индексу в списке.
+        5. Обновляет состояние главы в базе данных.
+        6. Перенаправляет пользователя на страницу первой созданной задачи курса.
 
-        Возвращает:
-            HttpResponseRedirect: Редирект на 'course_page' для просмотра созданного контента.
-        """
+    Возвращает:
+        HttpResponseRedirect: Редирект на 'course_page' для просмотра созданного контента.
+    """
     chapter_id = int(request.POST.get("chapter"))
     course_id = int(request.POST.get("course"))
     chapter = Chapter.objects.get(id=chapter_id)
@@ -658,4 +553,9 @@ def add_new_theory(request):
         new_theory.order = i
         new_theory.save()
     chapter.save(update_fields=["current_theory_number"])
-    return redirect("course_page", course_id=course_id, chapter_id=chapter.order, task_id=chapter.current_theory_number)
+    return redirect(
+        "course_page",
+        course_id=course_id,
+        chapter_id=chapter.order,
+        task_id=chapter.current_theory_number,
+    )

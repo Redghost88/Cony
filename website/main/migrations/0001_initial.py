@@ -57,7 +57,9 @@ class Migration(migrations.Migration):
                 ("current_theory_number", models.IntegerField(default=0)),
                 (
                     "course",
-                    models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="main.course"),
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to="main.course"
+                    ),
                 ),
             ],
         ),
@@ -141,7 +143,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "task",
-                    models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="main.task"),
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to="main.task"
+                    ),
                 ),
             ],
             options={
@@ -166,7 +170,9 @@ class Migration(migrations.Migration):
                 ("order", models.PositiveSmallIntegerField(default=0)),
                 (
                     "task",
-                    models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to="main.task"),
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT, to="main.task"
+                    ),
                 ),
             ],
             options={
@@ -190,14 +196,18 @@ class Migration(migrations.Migration):
                 ("order", models.PositiveSmallIntegerField(default=0)),
                 (
                     "chapter",
-                    models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="main.chapter"),
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to="main.chapter"
+                    ),
                 ),
             ],
         ),
         migrations.AddField(
             model_name="task",
             name="theory",
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="main.theory"),
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE, to="main.theory"
+            ),
         ),
         migrations.CreateModel(
             name="UserStats",

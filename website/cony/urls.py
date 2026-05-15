@@ -31,11 +31,19 @@ urlpatterns = [
     path("login/", views.user_login, name="login"),
     path("logout/", views.user_logout),
     path("registration/", views.registration, name="registration"),
-    path("course/<int:course_id>/chapter/<int:chapter_id>/task/<int:task_id>", views.course_page, name="course_page"),
+    path(
+        "course/<int:course_id>/chapter/<int:chapter_id>/task/<int:task_id>",
+        views.course_page,
+        name="course_page",
+    ),
     path("run_code/", views.run_code),
     path("send_code/", views.check_code),
     path("generate_task/", views.generate_tasks),
+    path("generate_course/", views.generate_course),
+    path("generate_chat_answer/", views.generate_chat_answer),
     path("add_new_theory/", views.add_new_theory),
+    path("attempt_status/<int:attempt_id>/", views.get_attempt_status),
+    path("get_attempts/<int:task_id>/", views.get_task_attempts),
 ]
 
 if settings.DEBUG:
