@@ -59,12 +59,14 @@ services:
       - 80
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./website/logs:/app/logs
       - ./nginx:/etc/nginx/conf.d
       - ./website/main/static:/app/static:ro
       - ./website/media:/app/media:ro
       - static_volume:/app/staticfiles:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - cony
   redis:
