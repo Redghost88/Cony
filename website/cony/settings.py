@@ -29,7 +29,7 @@ OPEN_ROUTER_API_TOKEN = config("OPENROUTER_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config("DJANGO_DEBUG", default="false").lower() == "true"
 
-ALLOWED_HOSTS = config("DJANGO_ALLOWED_HOSTS").split(" ")
+ALLOWED_HOSTS = config("DJANGO_ALLOWED_HOSTS", default="localhost").split(" ")
 CSRF_TRUSTED_ORIGINS = [f"https://{h.strip()}" for h in ALLOWED_HOSTS if h.strip()]
 
 if not DEBUG:
