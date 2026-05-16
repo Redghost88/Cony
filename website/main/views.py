@@ -3,6 +3,7 @@
 """
 
 import json
+import logging
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import JsonResponse
@@ -26,6 +27,8 @@ from main.prompts import (
     GENERATE_TASK,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def home(request):
     """
@@ -38,6 +41,7 @@ def home(request):
     :return: Объект HttpResponse с отрендеренным шаблоном 'index.html'.
     :rtype: HttpResponse
     """
+    logger.info(f"Главная страница запрошена пользователем: {request.user}")
     courses = []
     for course in Course.objects.all():
         courses.append(
@@ -51,6 +55,7 @@ def home(request):
         )
 
     context = {"courses": courses}
+    logger.info(f"Главная страница отображена, курсов: {len(courses)}")
     return render(request, "index.html", context)
 
 
@@ -68,6 +73,7 @@ def create_course(request):
     :return: Объект HttpResponse с отрендеренным шаблоном 'create_course.html'.
     :rtype: HttpResponse
     """
+    logger.info(f"Создание курса запрошено пользователем: {request.user}")
     if request.method == "POST":
         chapters = request.POST.getlist("chapter_name")
         course_title = request.POST.get("course_title")
@@ -92,8 +98,10 @@ def create_course(request):
         for i in range(1, len(chapters)):
             create_chapter(course, chapters[i], i)
 
+        logger.info(f"Курс создан: ID={course.id}, название='{course.title}', автор={request.user}, глав={len(chapters)}")
         return redirect("home")
     context = {}
+    logger.info("Отображена форма создания курса")
     return render(request, "create_course.html", context)
 
 
@@ -120,6 +128,7 @@ def create_chapter(course: Course, name: str, order: int) -> Chapter:
     new_chapter.title = name
     new_chapter.order = order
     new_chapter.save()
+    logger.debug(f"Создана глава: ID={new_chapter.id}, название='{name}', порядок={order}, курс={course.id}")
     return new_chapter
 
 
@@ -139,6 +148,7 @@ def generate_theory(chapter_name: str, technology: str) -> list:
     Raises:
         json.JSONDecodeError: Если ответ от AI не является валидным JSON.
     """
+    logger.info(f"Генерация теории: глава='{chapter_name}', технология='{technology}'")
     prompt = GENERATE_THEORY + STYLE_RULES
     question = (
         prompt
@@ -147,8 +157,17 @@ def generate_theory(chapter_name: str, technology: str) -> list:
         + ", Название технологии:"
         + technology
     )
-    answer = chat(question)
-    return json.loads(answer)
+    try:
+        answer = chat(question)
+        result = json.loads(answer)
+        logger.info(f"Теория сгенерирована успешно: блоков={len(result)}")
+        return result
+    except json.JSONDecodeError as e:
+        logger.error(f"Ошибка парсинга JSON при генерации теории: {e}, ответ AI: {answer[:200]}")
+        raise
+    except Exception as e:
+        logger.error(f"Ошибка при генерации теории: {e}")
+        raise
 
 
 @require_http_methods(["POST"])
@@ -165,43 +184,52 @@ def generate_tasks(request) -> JsonResponse:
     Returns:
         JsonResponse: Данные новой задачи и списка тестов для фронтенда.
     """
-    request_body = json.loads(request.body)
-    technology = request_body.get("technology")
-    theory = Theory.objects.get(id=int(request_body.get("theory")))
-    task = Task.objects.get(id=int(request_body.get("task")))
+    logger.info(f"Генерация задач запрошена пользователем: {request.user}")
+    try:
+        request_body = json.loads(request.body)
+        technology = request_body.get("technology")
+        theory = Theory.objects.get(id=int(request_body.get("theory")))
+        task = Task.objects.get(id=int(request_body.get("task")))
 
-    if task.is_generated:
-        Test.objects.filter(task=task).delete()
+        logger.info(f"Генерация задачи: технология='{technology}', теория ID={theory.id}, задача ID={task.id}")
 
-    question = GENERATE_TASK % (technology, theory.title, strip_tags(theory.text))
-    answer = json.loads(chat(question))
-    task_info = answer[0]
-    tests_info = answer[1]
-    task.title = task_info["title"]
-    task.task_content = task_info["content"]
-    task.input_data = task_info["input_data"]
-    task.output_data = task_info["output_data"]
-    task.is_generated = True
-    task.save()
-    response = {
-        "task_title": task.title,
-        "task_text": task.task_content,
-        "input_data": task.input_data,
-        "output_data": task.output_data,
-        "tests": [],
-    }
-    tests = []
-    for i in range(len(tests_info)):
-        test = Test.objects.create(
-            task=task,
-            input_data=tests_info[i][0],
-            output_data=tests_info[i][1],
-            order=i,
-        )
-        tests.append({"input_data": test.input_data, "output_data": test.output_data})
-    response["tests"] = tests
+        if task.is_generated:
+            Test.objects.filter(task=task).delete()
+            logger.debug(f"Удалены старые тесты для задачи ID={task.id}")
 
-    return JsonResponse(response)
+        question = GENERATE_TASK % (technology, theory.title, strip_tags(theory.text))
+        answer = json.loads(chat(question))
+        task_info = answer[0]
+        tests_info = answer[1]
+        task.title = task_info["title"]
+        task.task_content = task_info["content"]
+        task.input_data = task_info["input_data"]
+        task.output_data = task_info["output_data"]
+        task.is_generated = True
+        task.save()
+        response = {
+            "task_title": task.title,
+            "task_text": task.task_content,
+            "input_data": task.input_data,
+            "output_data": task.output_data,
+            "tests": [],
+        }
+        tests = []
+        for i in range(len(tests_info)):
+            test = Test.objects.create(
+                task=task,
+                input_data=tests_info[i][0],
+                output_data=tests_info[i][1],
+                order=i,
+            )
+            tests.append({"input_data": test.input_data, "output_data": test.output_data})
+        response["tests"] = tests
+
+        logger.info(f"Задача сгенерирована успешно: ID={task.id}, тестов={len(tests)}")
+        return JsonResponse(response)
+    except Exception as e:
+        logger.error(f"Ошибка при генерации задач: {e}")
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 def generate_course(request):
@@ -214,8 +242,11 @@ def generate_course(request):
     Returns:
         JsonResponse: JSON-ответ с полем 'answer', содержащим сгенерированный контент.
     """
-    question = GENERATE_COURSE + request.GET.get("question", "")
+    question_text = request.GET.get("question", "")
+    logger.info(f"Генерация курса запрошена: вопрос='{question_text[:100]}...'")
+    question = GENERATE_COURSE + question_text
     context = {"answer": chat(question)}
+    logger.info("Курс сгенерирован успешно")
     return JsonResponse(context)
 
 
@@ -229,11 +260,18 @@ def generate_chat_answer(request):
     Returns:
         JsonResponse: JSON-ответ с полем 'answer'.
     """
-    request_body = json.loads(request.body)
-    question = CHAT_SETTINGS + "\n" + request_body.get("question", "")
-    print(question)
-    context = {"answer": chat(question)}
-    return JsonResponse(context)
+    try:
+        request_body = json.loads(request.body)
+        question_text = request_body.get("question", "")
+        logger.info(f"Чат-ответ запрошен: вопрос='{question_text[:100]}...'")
+        question = CHAT_SETTINGS + "\n" + question_text
+        print(question)
+        context = {"answer": chat(question)}
+        logger.info("Чат-ответ сгенерирован успешно")
+        return JsonResponse(context)
+    except Exception as e:
+        logger.error(f"Ошибка при генерации чат-ответа: {e}")
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 def generate_answer(request):
@@ -251,8 +289,11 @@ def generate_answer(request):
     :query string: Если параметр ``question`` отсутствует, используется пустая строка.
 
     """
-    question = STYLE_RULES + request.GET.get("question", "")
+    question_text = request.GET.get("question", "")
+    logger.info(f"Генерация ответа запрошена: вопрос='{question_text[:100]}...'")
+    question = STYLE_RULES + question_text
     context = {"answer": chat(question)}
+    logger.info("Ответ сгенерирован успешно")
     return JsonResponse(context)
 
 
@@ -267,6 +308,7 @@ def profile(request, username):
     Returns:
         HttpResponse: Отрендеренная страница 'profile.html' с формой и статистикой.
     """
+    logger.info(f"Профиль запрошен: username='{username}', запрашивающий={request.user}")
     user = get_object_or_404(User, username=username)
     profile_instance, created = Profile.objects.get_or_create(user=request.user)
     count_of_decided_tasks = Task.objects.filter(
@@ -280,7 +322,10 @@ def profile(request, username):
         form = ProfileUpdateForm(request.POST, request.FILES, instance=profile_instance)
         if form.is_valid():
             form.save()
+            logger.info(f"Профиль обновлен: пользователь={request.user}")
             return redirect("profile", username=username)
+        else:
+            logger.warning(f"Ошибка валидации формы профиля: пользователь={request.user}, ошибки={form.errors}")
     else:
         form = ProfileUpdateForm(instance=profile_instance)
 
@@ -295,6 +340,7 @@ def profile(request, username):
         "complete_streak": user_stats.complete_seria,
         "max_seria": user_stats.max_seria,
     }
+    logger.info(f"Профиль отображен: username='{username}', решенных задач={count_of_decided_tasks}, серия={user_stats.complete_seria}")
     return render(request, "profile.html", context)
 
 
@@ -308,6 +354,7 @@ def user_login(request):
     Returns:
         HttpResponse: Редирект на главную страницу или страница логина с ошибкой.
     """
+    logger.info(f"Попытка входа в систему")
     context = {}
     if request.method == "POST":
         form = LoginForm(request.POST)
@@ -321,9 +368,14 @@ def user_login(request):
                     check_user_seria(request.user)
                 else:
                     UserStats.objects.create(user=request.user)
+                logger.info(f"Успешный вход: пользователь='{username}'")
                 return redirect("home")
+            else:
+                logger.warning(f"Неудачная попытка входа: пользователь='{username}'")
         context["error"] = "неверный логин или пароль"
+        logger.warning(f"Ошибка валидации формы входа")
     context["form"] = LoginForm()
+    logger.info("Отображена форма входа")
     return render(request, "login.html", context)
 
 
@@ -334,6 +386,7 @@ def check_user_seria(user):
     if task_complete_date is None or not is_yesterday(task_complete_date):
         user_stats.complete_seria = 0
         user_stats.save(update_fields=["complete_seria"])
+        logger.debug(f"Сброшена серия пользователя: {user.username}")
 
 
 def user_logout(request):
@@ -351,7 +404,9 @@ def user_logout(request):
     Возвращает:
         HttpResponseRedirect: Перенаправление на именованный URL-адрес 'login'.
     """
+    logger.info(f"Выход из системы: пользователь={request.user}")
     logout(request)
+    logger.info(f"Успешный выход из системы")
     return redirect("login")
 
 
@@ -365,14 +420,19 @@ def registration(request):
     Returns:
         HttpResponse: Страница регистрации или редирект на главную.
     """
+    logger.info(f"Регистрация нового пользователя")
     context = {}
     if request.method == "POST":
         form = RegisterForm(request.POST)
         if form.is_valid():
-            form.save()
+            user = form.save()
+            logger.info(f"Пользователь зарегистрирован: username='{user.username}'")
             user_login(request)
             return redirect("home")
+        else:
+            logger.warning(f"Ошибка валидации формы регистрации: ошибки={form.errors}")
     context["form"] = RegisterForm()
+    logger.info("Отображена форма регистрации")
     return render(request, "registration.html", context)
 
 
@@ -393,6 +453,7 @@ def course_page(request, course_id, chapter_id, task_id):
     Returns:
         HttpResponse: Отрендеренная страница 'course_page.html'.
     """
+    logger.info(f"Страница курса запрошена: пользователь={request.user}, курс={course_id}, глава={chapter_id}, задача={task_id}")
     course = get_object_or_404(Course, id=course_id)
     course.current_chapter_number = chapter_id
     course.save()
@@ -413,6 +474,7 @@ def course_page(request, course_id, chapter_id, task_id):
             tests = Test.objects.filter(task=task)
         except ObjectDoesNotExist:
             task = Task.objects.create(theory=theory, user=request.user)
+            logger.debug(f"Создана новая задача: ID={task.id}, теория={theory.id}, пользователь={request.user}")
     attempts = []
     last_attempt = None
     if task:
@@ -434,6 +496,7 @@ def course_page(request, course_id, chapter_id, task_id):
         "attempts": attempts,
         "last_attempt": last_attempt,
     }
+    logger.info(f"Страница курса отображена: курс='{course.title}', глав={len(chapters)}, теорий={len(theory_blocks)}")
     return render(request, "course_page.html", context)
 
 
@@ -451,21 +514,27 @@ def run_code(request):
     Returns:
         JsonResponse: {'output': str} при успехе или {'error': str} при ошибке.
     """
-    request_body = json.loads(request.body)
-    code = request_body.get("code")
-    input_data = request_body.get("input_data")
-    code_timeout = 2
+    logger.info(f"Выполнение кода запрошено пользователем: {request.user}")
     try:
+        request_body = json.loads(request.body)
+        code = request_body.get("code")
+        input_data = request_body.get("input_data")
+        code_timeout = 2
+        logger.debug(f"Выполнение кода: длина кода={len(code)}, входные данные='{input_data[:100] if input_data else 'нет'}'")
+        
         async_result = test_user_code.apply_async(
             args=[code, input_data, code_timeout]
         ).get(timeout=code_timeout)
 
         if async_result["stdout"]:
             output = async_result["stdout"]
+            logger.info(f"Код выполнен успешно: вывод='{output[:100]}...'")
         else:
             output = '<div style="color: #dc3545;">' + async_result["stderr"] + "</div>"
+            logger.warning(f"Ошибка выполнения кода: ошибка='{async_result['stderr'][:200]}'")
         return JsonResponse({"output": output})
     except Exception as e:
+        logger.error(f"Исключение при выполнении кода: {e}")
         return JsonResponse({"error": str(e)})
 
 
@@ -480,31 +549,42 @@ def check_code(request):
     Returns:
         JsonResponse: Список последних 5 попыток пользователя.
     """
-    code = json.loads(request.body)["source_code"]
-    task_id = int(json.loads(request.body)["task_id"])
-    task = Task.objects.get(id=task_id)
-    attempt = Attempt.objects.create(task=task, user=request.user, source_code=code)
-    course_id = json.loads(request.body)["course_id"]
-    send_attempt.delay(attempt.id, course_id)
+    logger.info(f"Проверка кода запрошена пользователем: {request.user}")
+    try:
+        data = json.loads(request.body)
+        code = data["source_code"]
+        task_id = int(data["task_id"])
+        task = Task.objects.get(id=task_id)
+        attempt = Attempt.objects.create(task=task, user=request.user, source_code=code)
+        course_id = data["course_id"]
+        send_attempt.delay(attempt.id, course_id)
 
-    attempts = Attempt.objects.filter(task=task)
-    return JsonResponse({"attempts": list(attempts[:5].values())})
+        attempts = Attempt.objects.filter(task=task)
+        logger.info(f"Попытка создана: ID={attempt.id}, задача={task_id}, курс={course_id}, длина кода={len(code)}")
+        return JsonResponse({"attempts": list(attempts[:5].values())})
+    except Exception as e:
+        logger.error(f"Ошибка при создании попытки: {e}")
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 def get_task_attempts(request, task_id):
     """Возвращает все попытки решения пользователем конкретной задачи"""
+    logger.info(f"Запрос попыток задачи: задача={task_id}, пользователь={request.user}")
     task = Task.objects.get(id=task_id)
     attempts = Attempt.objects.filter(task=task)
+    logger.info(f"Возвращено попыток: {attempts.count()} для задачи={task_id}")
     return JsonResponse({"attempts": list(attempts[:5].values())})
 
 
 @require_http_methods(["GET"])
 def get_attempt_status(request, attempt_id):
     """Возвращает текущий статус проверки."""
+    logger.info(f"Запрос статуса попытки: ID={attempt_id}, пользователь={request.user}")
     try:
         attempt = Attempt.objects.only("status", "passed", "check_log").get(
             id=attempt_id
         )
+        logger.info(f"Статус попытки: ID={attempt_id}, статус={attempt.status}, пройдено={attempt.passed}")
         return JsonResponse(
             {
                 "status": attempt.status,
@@ -513,6 +593,7 @@ def get_attempt_status(request, attempt_id):
             }
         )
     except Attempt.DoesNotExist:
+        logger.error(f"Попытка не найдена: ID={attempt_id}")
         return JsonResponse({"error": "Not found"})
 
 
@@ -539,10 +620,13 @@ def add_new_theory(request):
     Возвращает:
         HttpResponseRedirect: Редирект на 'course_page' для просмотра созданного контента.
     """
+    logger.info(f"Добавление новой теории запрошено пользователем: {request.user}")
     chapter_id = int(request.POST.get("chapter"))
     course_id = int(request.POST.get("course"))
     chapter = Chapter.objects.get(id=chapter_id)
     course = Course.objects.get(id=course_id)
+    logger.info(f"Добавление теории: глава ID={chapter_id} '{chapter.title}', курс ID={course_id} '{course.title}'")
+    
     theory_blocks = generate_theory(chapter.title, course.technology)
     chapter.current_theory_number = 0
     for i in range(len(theory_blocks)):
@@ -553,6 +637,8 @@ def add_new_theory(request):
         new_theory.order = i
         new_theory.save()
     chapter.save(update_fields=["current_theory_number"])
+    
+    logger.info(f"Теория добавлена: блоков={len(theory_blocks)}, глава={chapter.title}")
     return redirect(
         "course_page",
         course_id=course_id,
