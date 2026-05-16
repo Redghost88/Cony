@@ -106,6 +106,7 @@ def create_chapter(course: Course, name: str, order: int) -> Chapter:
     new_chapter.save()
     return new_chapter
 
+
 @login_required
 def course_page(request, course_id, chapter_id, task_id):
     """
@@ -165,6 +166,7 @@ def course_page(request, course_id, chapter_id, task_id):
         "last_attempt": last_attempt,
     }
     return render(request, "course_page.html", context)
+
 
 @require_http_methods(["POST"])
 def add_new_theory(request):

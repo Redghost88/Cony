@@ -4,9 +4,9 @@
 import json
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
-from django.shortcuts import get_object_or_404
 from main.models import Task, Attempt
 from main.tasks import send_attempt, test_user_code
+
 
 @require_http_methods(["POST"])
 def run_code(request):
@@ -85,4 +85,3 @@ def get_attempt_status(request, attempt_id):
         )
     except Attempt.DoesNotExist:
         return JsonResponse({"error": "Not found"})
-
