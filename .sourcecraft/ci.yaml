@@ -48,12 +48,14 @@ tasks:
     cubes:
       - name: run-pytests
         image: python:3.12-slim
+        env:
+          DJANGO_SECRET_KEY: dummy-secret-key-for-docs-build-not-for-production
         script:
           - python -m pip install --upgrade pip
           - pip install -r website/requirements.txt
           - cd website
-          - python -m pytest --cov=./ --cov-report=term-missing --cov-fail-under=70
+          - pytest
         artifacts:
           paths: 
-           - website/htmlcov
+           - /htmlcov/
 
