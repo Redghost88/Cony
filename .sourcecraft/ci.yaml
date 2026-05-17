@@ -57,5 +57,5 @@ tasks:
           - pytest
         artifacts:
           paths: 
-           - /htmlcov/
+           - htmlcov/
 

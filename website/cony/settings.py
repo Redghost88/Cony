@@ -25,7 +25,7 @@ load_dotenv()
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config("DJANGO_SECRET_KEY")
-OPEN_ROUTER_API_TOKEN = config("OPENROUTER_KEY")
+OPEN_ROUTER_API_TOKEN = config("OPENROUTER_KEY", "")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config("DJANGO_DEBUG", default="false").lower() == "true"
 
