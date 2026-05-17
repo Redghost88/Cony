@@ -1,7 +1,9 @@
 """
 Отвечает за отображение курсов, глав и навигацию по обучению.
 """
+
 import json
+import logging
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -9,6 +11,8 @@ from django.views.decorators.http import require_http_methods
 from main.models import Chapter, Course, Theory, Task, Test, Attempt
 from main.utils import clean_duplicate_theories, update_course_progress
 from .ai_views import generate_theory
+
+logger = logging.getLogger(__name__)
 
 
 def home(request):
@@ -22,6 +26,7 @@ def home(request):
     :return: Объект HttpResponse с отрендеренным шаблоном 'index.html'.
     :rtype: HttpResponse
     """
+    logger.info(f"Главная страница запрошена пользователем: {request.user}")
     courses = []
     for course in Course.objects.all():
         courses.append(
@@ -35,6 +40,7 @@ def home(request):
         )
 
     context = {"courses": courses}
+    logger.info(f"Главная страница отображена, курсов: {len(courses)}")
     return render(request, "index.html", context)
 
 
@@ -52,6 +58,7 @@ def create_course(request):
     :return: Объект HttpResponse с отрендеренным шаблоном 'create_course.html'.
     :rtype: HttpResponse
     """
+    logger.info(f"Создание курса запрошено пользователем: {request.user}")
     if request.method == "POST":
         chapters = request.POST.getlist("chapter_name")
         course_title = request.POST.get("course_title")
@@ -76,8 +83,12 @@ def create_course(request):
         for i in range(1, len(chapters)):
             create_chapter(course, chapters[i], i)
 
+        logger.info(
+            f"Курс создан: ID={course.id}, название='{course.title}', автор={request.user}, глав={len(chapters)}"
+        )
         return redirect("home")
     context = {}
+    logger.info("Отображена форма создания курса")
     return render(request, "create_course.html", context)
 
 
@@ -104,6 +115,9 @@ def create_chapter(course: Course, name: str, order: int) -> Chapter:
     new_chapter.title = name
     new_chapter.order = order
     new_chapter.save()
+    logger.debug(
+        f"Создана глава: ID={new_chapter.id}, название='{name}', порядок={order}, курс={course.id}"
+    )
     return new_chapter
 
 
@@ -124,6 +138,9 @@ def course_page(request, course_id, chapter_id, task_id):
     Returns:
         HttpResponse: Отрендеренная страница 'course_page.html'.
     """
+    logger.info(
+        f"Страница курса запрошена: пользователь={request.user}, курс={course_id}, глава={chapter_id}, задача={task_id}"
+    )
     course = get_object_or_404(Course, id=course_id)
     course.current_chapter_number = chapter_id
     course.save()
@@ -144,6 +161,9 @@ def course_page(request, course_id, chapter_id, task_id):
             tests = Test.objects.filter(task=task)
         except ObjectDoesNotExist:
             task = Task.objects.create(theory=theory, user=request.user)
+            logger.debug(
+                f"Создана новая задача: ID={task.id}, теория={theory.id}, пользователь={request.user}"
+            )
     attempts = []
     last_attempt = None
     if task:
@@ -165,6 +185,9 @@ def course_page(request, course_id, chapter_id, task_id):
         "attempts": attempts,
         "last_attempt": last_attempt,
     }
+    logger.info(
+        f"Страница курса отображена: курс='{course.title}', глав={len(chapters)}, теорий={len(theory_blocks)}"
+    )
     return render(request, "course_page.html", context)
 
 
@@ -191,10 +214,15 @@ def add_new_theory(request):
     Возвращает:
         HttpResponseRedirect: Редирект на 'course_page' для просмотра созданного контента.
     """
+    logger.info(f"Добавление новой теории запрошено пользователем: {request.user}")
     chapter_id = int(request.POST.get("chapter"))
     course_id = int(request.POST.get("course"))
     chapter = Chapter.objects.get(id=chapter_id)
     course = Course.objects.get(id=course_id)
+    logger.info(
+        f"Добавление теории: глава ID={chapter_id} '{chapter.title}', курс ID={course_id} '{course.title}'"
+    )
+
     theory_blocks = generate_theory(chapter.title, course.technology)
     chapter.current_theory_number = 0
     for i in range(len(theory_blocks)):
@@ -205,6 +233,8 @@ def add_new_theory(request):
         new_theory.order = i
         new_theory.save()
     chapter.save(update_fields=["current_theory_number"])
+
+    logger.info(f"Теория добавлена: блоков={len(theory_blocks)}, глава={chapter.title}")
     return redirect(
         "course_page",
         course_id=course_id,

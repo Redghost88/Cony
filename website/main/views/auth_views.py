@@ -1,12 +1,16 @@
 """
 Отвечает за аутентификацию, регистрацию и управление профилем пользователя.
 """
+
+import logging
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from main.forms import ProfileUpdateForm, LoginForm, RegisterForm
 from main.models import Task, Profile, UserStats
 from main.utils import is_yesterday
+
+logger = logging.getLogger(__name__)
 
 
 def profile(request, username):
@@ -20,6 +24,9 @@ def profile(request, username):
     Returns:
         HttpResponse: Отрендеренная страница 'profile.html' с формой и статистикой.
     """
+    logger.info(
+        f"Профиль запрошен: username='{username}', запрашивающий={request.user}"
+    )
     user = get_object_or_404(User, username=username)
     profile_instance, created = Profile.objects.get_or_create(user=request.user)
     count_of_decided_tasks = Task.objects.filter(
@@ -33,7 +40,12 @@ def profile(request, username):
         form = ProfileUpdateForm(request.POST, request.FILES, instance=profile_instance)
         if form.is_valid():
             form.save()
+            logger.info(f"Профиль обновлен: пользователь={request.user}")
             return redirect("profile", username=username)
+        else:
+            logger.warning(
+                f"Ошибка валидации формы профиля: пользователь={request.user}, ошибки={form.errors}"
+            )
     else:
         form = ProfileUpdateForm(instance=profile_instance)
 
@@ -48,6 +60,9 @@ def profile(request, username):
         "complete_streak": user_stats.complete_seria,
         "max_seria": user_stats.max_seria,
     }
+    logger.info(
+        f"Профиль: username='{username}', решенных задач={count_of_decided_tasks}, серия={user_stats.complete_seria}"
+    )
     return render(request, "profile.html", context)
 
 
@@ -61,6 +76,7 @@ def user_login(request):
     Returns:
         HttpResponse: Редирект на главную страницу или страница логина с ошибкой.
     """
+    logger.info("Попытка входа в систему")
     context = {}
     if request.method == "POST":
         form = LoginForm(request.POST)
@@ -74,9 +90,14 @@ def user_login(request):
                     check_user_seria(request.user)
                 else:
                     UserStats.objects.create(user=request.user)
+                logger.info(f"Успешный вход: пользователь='{username}'")
                 return redirect("home")
+            else:
+                logger.warning(f"Неудачная попытка входа: пользователь='{username}'")
         context["error"] = "неверный логин или пароль"
+        logger.warning("Ошибка валидации формы входа")
     context["form"] = LoginForm()
+    logger.info("Отображена форма входа")
     return render(request, "login.html", context)
 
 
@@ -87,6 +108,7 @@ def check_user_seria(user):
     if task_complete_date is None or not is_yesterday(task_complete_date):
         user_stats.complete_seria = 0
         user_stats.save(update_fields=["complete_seria"])
+        logger.debug(f"Сброшена серия пользователя: {user.username}")
 
 
 def user_logout(request):
@@ -104,7 +126,9 @@ def user_logout(request):
     Возвращает:
         HttpResponseRedirect: Перенаправление на именованный URL-адрес 'login'.
     """
+    logger.info(f"Выход из системы: пользователь={request.user}")
     logout(request)
+    logger.info("Успешный выход из системы")
     return redirect("login")
 
 
@@ -118,12 +142,17 @@ def registration(request):
     Returns:
         HttpResponse: Страница регистрации или редирект на главную.
     """
+    logger.info("Регистрация нового пользователя")
     context = {}
     if request.method == "POST":
         form = RegisterForm(request.POST)
         if form.is_valid():
-            form.save()
+            user = form.save()
+            logger.info(f"Пользователь зарегистрирован: username='{user.username}'")
             user_login(request)
             return redirect("home")
+        else:
+            logger.warning(f"Ошибка валидации формы регистрации: ошибки={form.errors}")
     context["form"] = RegisterForm()
+    logger.info("Отображена форма регистрации")
     return render(request, "registration.html", context)

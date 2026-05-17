@@ -1,7 +1,9 @@
 """
 Отвечает за генерацию контента и взаимодействие с AI-агентом.
 """
+
 import json
+import logging
 from django.http import JsonResponse
 from django.utils.html import strip_tags
 from django.views.decorators.http import require_http_methods
@@ -14,6 +16,8 @@ from main.prompts import (
     GENERATE_THEORY,
     GENERATE_TASK,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def generate_theory(chapter_name: str, technology: str) -> list:
@@ -32,6 +36,7 @@ def generate_theory(chapter_name: str, technology: str) -> list:
     Raises:
         json.JSONDecodeError: Если ответ от AI не является валидным JSON.
     """
+    logger.info(f"Генерация теории: глава='{chapter_name}', технология='{technology}'")
     prompt = GENERATE_THEORY + STYLE_RULES
     question = (
         prompt
@@ -40,8 +45,19 @@ def generate_theory(chapter_name: str, technology: str) -> list:
         + ", Название технологии:"
         + technology
     )
-    answer = chat(question)
-    return json.loads(answer)
+    try:
+        answer = chat(question)
+        result = json.loads(answer)
+        logger.info(f"Теория сгенерирована успешно: блоков={len(result)}")
+        return result
+    except json.JSONDecodeError as e:
+        logger.error(
+            f"Ошибка парсинга JSON при генерации теории: {e}, ответ AI: {answer[:200]}"
+        )
+        raise
+    except Exception as e:
+        logger.error(f"Ошибка при генерации теории: {e}")
+        raise
 
 
 @require_http_methods(["POST"])
@@ -58,43 +74,56 @@ def generate_tasks(request) -> JsonResponse:
     Returns:
         JsonResponse: Данные новой задачи и списка тестов для фронтенда.
     """
-    request_body = json.loads(request.body)
-    technology = request_body.get("technology")
-    theory = Theory.objects.get(id=int(request_body.get("theory")))
-    task = Task.objects.get(id=int(request_body.get("task")))
+    logger.info(f"Генерация задач запрошена пользователем: {request.user}")
+    try:
+        request_body = json.loads(request.body)
+        technology = request_body.get("technology")
+        theory = Theory.objects.get(id=int(request_body.get("theory")))
+        task = Task.objects.get(id=int(request_body.get("task")))
 
-    if task.is_generated:
-        Test.objects.filter(task=task).delete()
-
-    question = GENERATE_TASK % (technology, theory.title, strip_tags(theory.text))
-    answer = json.loads(chat(question))
-    task_info = answer[0]
-    tests_info = answer[1]
-    task.title = task_info["title"]
-    task.task_content = task_info["content"]
-    task.input_data = task_info["input_data"]
-    task.output_data = task_info["output_data"]
-    task.is_generated = True
-    task.save()
-    response = {
-        "task_title": task.title,
-        "task_text": task.task_content,
-        "input_data": task.input_data,
-        "output_data": task.output_data,
-        "tests": [],
-    }
-    tests = []
-    for i in range(len(tests_info)):
-        test = Test.objects.create(
-            task=task,
-            input_data=tests_info[i][0],
-            output_data=tests_info[i][1],
-            order=i,
+        logger.info(
+            f"Генерация задачи: технология='{technology}', теория ID={theory.id}, задача ID={task.id}"
         )
-        tests.append({"input_data": test.input_data, "output_data": test.output_data})
-    response["tests"] = tests
 
-    return JsonResponse(response)
+        if task.is_generated:
+            Test.objects.filter(task=task).delete()
+            logger.debug(f"Удалены старые тесты для задачи ID={task.id}")
+
+        question = GENERATE_TASK % (technology, theory.title, strip_tags(theory.text))
+        answer = json.loads(chat(question))
+        task_info = answer[0]
+        tests_info = answer[1]
+        task.title = task_info["title"]
+        task.task_content = task_info["content"]
+        task.input_data = task_info["input_data"]
+        task.output_data = task_info["output_data"]
+        task.is_generated = True
+        task.save()
+        response = {
+            "task_title": task.title,
+            "task_text": task.task_content,
+            "input_data": task.input_data,
+            "output_data": task.output_data,
+            "tests": [],
+        }
+        tests = []
+        for i in range(len(tests_info)):
+            test = Test.objects.create(
+                task=task,
+                input_data=tests_info[i][0],
+                output_data=tests_info[i][1],
+                order=i,
+            )
+            tests.append(
+                {"input_data": test.input_data, "output_data": test.output_data}
+            )
+        response["tests"] = tests
+
+        logger.info(f"Задача сгенерирована успешно: ID={task.id}, тестов={len(tests)}")
+        return JsonResponse(response)
+    except Exception as e:
+        logger.error(f"Ошибка при генерации задач: {e}")
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 def generate_course(request):
@@ -107,8 +136,11 @@ def generate_course(request):
     Returns:
         JsonResponse: JSON-ответ с полем 'answer', содержащим сгенерированный контент.
     """
-    question = GENERATE_COURSE + request.GET.get("question", "")
+    question_text = request.GET.get("question", "")
+    logger.info(f"Генерация курса запрошена: вопрос='{question_text[:100]}...'")
+    question = GENERATE_COURSE + question_text
     context = {"answer": chat(question)}
+    logger.info("Курс сгенерирован успешно")
     return JsonResponse(context)
 
 
@@ -122,11 +154,18 @@ def generate_chat_answer(request):
     Returns:
         JsonResponse: JSON-ответ с полем 'answer'.
     """
-    request_body = json.loads(request.body)
-    question = CHAT_SETTINGS + "\n" + request_body.get("question", "")
-    print(question)
-    context = {"answer": chat(question)}
-    return JsonResponse(context)
+    try:
+        request_body = json.loads(request.body)
+        question_text = request_body.get("question", "")
+        logger.info(f"Чат-ответ запрошен: вопрос='{question_text[:100]}...'")
+        question = CHAT_SETTINGS + "\n" + question_text
+        print(question)
+        context = {"answer": chat(question)}
+        logger.info("Чат-ответ сгенерирован успешно")
+        return JsonResponse(context)
+    except Exception as e:
+        logger.error(f"Ошибка при генерации чат-ответа: {e}")
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 def generate_answer(request):
@@ -144,6 +183,9 @@ def generate_answer(request):
     :query string: Если параметр ``question`` отсутствует, используется пустая строка.
 
     """
-    question = STYLE_RULES + request.GET.get("question", "")
+    question_text = request.GET.get("question", "")
+    logger.info(f"Генерация ответа запрошена: вопрос='{question_text[:100]}...'")
+    question = STYLE_RULES + question_text
     context = {"answer": chat(question)}
+    logger.info("Ответ сгенерирован успешно")
     return JsonResponse(context)
