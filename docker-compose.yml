@@ -16,6 +16,7 @@ services:
       - ./website:/app
       - ./website/main/static:/app/static
       - static_volume:/app/staticfiles
+      - ./website/logs:/app/logs
     networks:
       - cony_network
     depends_on:
