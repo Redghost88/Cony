@@ -14,6 +14,7 @@ workflows:
     tasks:
       - pep8-check
       - build-docs
+      - tests
 
 tasks:
   - name: pep8-check
@@ -43,5 +44,16 @@ tasks:
         artifacts:
           paths: 
            - website/docs/build/html
-
+  - name: tests
+    cubes:
+      - name: run-pytests
+        image: python:3.12-slim
+        script:
+          - python -m pip install --upgrade pip
+          - pip install -r requirements.txt
+          - cd website
+          - python -m pytest --cov=./ --cov-report=term-missing --cov-fail-under=70
+        artifacts:
+          paths: 
+           - website/htmlcov
 

@@ -26,7 +26,7 @@ def profile(request, username):
     """
     logger.info(f"Профиль запрошен: username='{username}'")
     user = get_object_or_404(User, username=username)
-    profile_instance = Profile.objects.get_or_create(user=request.user)
+    profile_instance, created = Profile.objects.get_or_create(user=request.user)
 
     if request.method == "POST":
         form = ProfileUpdateForm(request.POST, request.FILES, instance=profile_instance)

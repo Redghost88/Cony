@@ -76,7 +76,9 @@ def create_course(request):
 @login_required
 def course_page(request, course_id, chapter_id, theory_id):
     """Отображает страницу урока: теорию, задачу, тесты и историю попыток."""
-    logger.info(f"Страница курса запрошена: курс={course_id}, глава={chapter_id}, теория={theory_id}")
+    logger.info(
+        f"Страница курса запрошена: курс={course_id}, глава={chapter_id}, теория={theory_id}"
+    )
     course = get_object_or_404(Course, id=course_id)
     course.current_chapter_number = chapter_id
     course.save(update_fields=["current_chapter_number"])

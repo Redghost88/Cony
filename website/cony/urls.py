@@ -29,20 +29,24 @@ urlpatterns = [
     path("generate_answer/", ai_views.generate_answer),
     path("profile/<str:username>", auth_views.profile, name="profile"),
     path("login/", auth_views.user_login, name="login"),
-    path("logout/", auth_views.user_logout),
+    path("logout/", auth_views.user_logout, name="logout"),
     path("registration/", auth_views.registration, name="registration"),
     path(
         "course/<int:course_id>/chapter/<int:chapter_id>/task/<int:theory_id>",
         course_views.course_page,
         name="course_page",
     ),
-    path("run_code/", execution_views.run_code),
-    path("send_code/", execution_views.check_code),
+    path("run_code/", execution_views.run_code, name="run_code"),
+    path("send_code/", execution_views.check_code, name="check_code"),
     path("generate_task/", ai_views.generate_tasks),
     path("generate_course/", ai_views.generate_course),
     path("generate_chat_answer/", ai_views.generate_chat_answer),
     path("add_new_theory/", course_views.add_new_theory),
-    path("attempt_status/<int:attempt_id>/", execution_views.get_attempt_status),
+    path(
+        "attempt_status/<int:attempt_id>/",
+        execution_views.get_attempt_status,
+        name="get_attempt_status",
+    ),
     path("get_attempts/<int:task_id>/", execution_views.get_task_attempts),
 ]
 

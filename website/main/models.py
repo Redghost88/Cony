@@ -29,12 +29,14 @@ class Course(models.Model):
     current_chapter_number = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        "Выводит название"
+        return self.title
+
     def create_chapters(self, chapters_name):
         """Создаёт главы курса"""
         for i in range(len(chapters_name)):
-            Chapter.objects.create(
-                course=self, title=chapters_name[i], order=i
-            )
+            Chapter.objects.create(course=self, title=chapters_name[i], order=i)
 
 
 class Chapter(models.Model):
@@ -54,6 +56,10 @@ class Chapter(models.Model):
     title = models.CharField(max_length=256, default="Глава")
     order = models.PositiveSmallIntegerField(default=0)
     current_theory_number = models.IntegerField(default=0)
+
+    def __str__(self):
+        "Выводит название"
+        return self.title
 
     def create_theories(self, theory_blocks):
         """Создаёт теорию главы курса"""
@@ -84,6 +90,10 @@ class Theory(models.Model):
     title = models.CharField(max_length=256, default="Задача")
     text = models.CharField(max_length=4096, default="")
     order = models.PositiveSmallIntegerField(default=0)
+
+    def __str__(self):
+        "Выводит название"
+        return self.title
 
 
 class Task(models.Model):
@@ -119,6 +129,10 @@ class Task(models.Model):
     output_data = models.CharField(max_length=4096, default="")
     decided = models.BooleanField(default=False)
     is_generated = models.BooleanField(default=False)
+
+    def __str__(self):
+        "Выводит название"
+        return self.title
 
 
 class Test(models.Model):
@@ -175,6 +189,10 @@ class Profile(models.Model):
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     avatar = models.ImageField(upload_to="avatars/", default="default.jpg")
+
+    def __str__(self):
+        """Выводит имя юзера профиля"""
+        return f"Profile of {self.user.username}"
 
 
 class Attempt(models.Model):
