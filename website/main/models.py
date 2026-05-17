@@ -29,6 +29,13 @@ class Course(models.Model):
     current_chapter_number = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def create_chapters(self, chapters_name):
+        """Создаёт главы курса"""
+        for i in range(len(chapters_name)):
+            Chapter.objects.create(
+                course=self, title=chapters_name[i], order=i
+            )
+
 
 class Chapter(models.Model):
     """Модель главы курса.
@@ -47,6 +54,16 @@ class Chapter(models.Model):
     title = models.CharField(max_length=256, default="Глава")
     order = models.PositiveSmallIntegerField(default=0)
     current_theory_number = models.IntegerField(default=0)
+
+    def create_theories(self, theory_blocks):
+        """Создаёт теорию главы курса"""
+        for i in range(len(theory_blocks)):
+            Theory.objects.create(
+                chapter=self,
+                title=theory_blocks[i]["title"],
+                text=theory_blocks[i]["content"],
+                order=i,
+            )
 
 
 class Theory(models.Model):

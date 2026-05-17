@@ -119,7 +119,8 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# cony/settings.py
+LOG_DIR = BASE_DIR / "logs"
+LOG_DIR.mkdir(exist_ok=True)
 
 LOGGING = {
     "version": 1,
@@ -137,7 +138,7 @@ LOGGING = {
         },
         "file": {
             "class": "logging.FileHandler",
-            "filename": "/app/logs/django.log",
+            "filename": str(LOG_DIR / "django.log"),
             "formatter": "verbose",
             "level": "INFO",
         },

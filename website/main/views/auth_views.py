@@ -24,17 +24,9 @@ def profile(request, username):
     Returns:
         HttpResponse: Отрендеренная страница 'profile.html' с формой и статистикой.
     """
-    logger.info(
-        f"Профиль запрошен: username='{username}', запрашивающий={request.user}"
-    )
+    logger.info(f"Профиль запрошен: username='{username}'")
     user = get_object_or_404(User, username=username)
-    profile_instance, created = Profile.objects.get_or_create(user=request.user)
-    count_of_decided_tasks = Task.objects.filter(
-        user=request.user, decided=True
-    ).count()
-    count_of_undecided_tasks = Task.objects.filter(
-        user=request.user, decided=False
-    ).count()
+    profile_instance = Profile.objects.get_or_create(user=request.user)
 
     if request.method == "POST":
         form = ProfileUpdateForm(request.POST, request.FILES, instance=profile_instance)
@@ -50,6 +42,19 @@ def profile(request, username):
         form = ProfileUpdateForm(instance=profile_instance)
 
     check_user_seria(request.user)
+
+    logger.info(f"Профиль: username='{username}' загружен")
+    return render(request, "profile.html", build_profile_context(request, user, form))
+
+
+def build_profile_context(request, user, form) -> dict:
+    """Формирует JSON-ответ для фронтенда профиля пользователя"""
+    count_of_decided_tasks = Task.objects.filter(
+        user=request.user, decided=True
+    ).count()
+    count_of_undecided_tasks = Task.objects.filter(
+        user=request.user, decided=False
+    ).count()
     user_stats = UserStats.objects.get(user=request.user)
 
     context = {
@@ -60,10 +65,7 @@ def profile(request, username):
         "complete_streak": user_stats.complete_seria,
         "max_seria": user_stats.max_seria,
     }
-    logger.info(
-        f"Профиль: username='{username}', решенных задач={count_of_decided_tasks}, серия={user_stats.complete_seria}"
-    )
-    return render(request, "profile.html", context)
+    return context
 
 
 def user_login(request):

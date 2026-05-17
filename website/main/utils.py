@@ -3,8 +3,11 @@
 """
 
 from datetime import datetime, timedelta
+import logging
 
-from main.models import Chapter, Theory, Task
+from main.models import Chapter, Test, Theory, Task
+
+logger = logging.getLogger(__name__)
 
 
 def is_yesterday(date):
@@ -60,3 +63,32 @@ def clean_duplicate_theories(chapter, task_id):
         if len(theory_same_order) > 1:
             for t in theory_same_order[1:]:
                 t.delete()
+
+
+def create_new_tests(task, tests_info: list) -> list:
+    """Создает объекты Test для задачи"""
+    if task.is_generated:
+        Test.objects.filter(task=task).delete()
+        logger.debug(f"Удалены старые тесты для задачи ID={task.id}")
+    tests = []
+    for i in range(len(tests_info)):
+        test = Test.objects.create(
+            task=task,
+            input_data=tests_info[i][0],
+            output_data=tests_info[i][1],
+            order=i,
+        )
+        tests.append({"input_data": test.input_data, "output_data": test.output_data})
+    return tests
+
+
+def build_task_response(task, tests_info) -> dict:
+    """Формирует JSON-ответ для фронтенда задачи"""
+    response = {
+        "task_title": task.title,
+        "task_text": task.task_content,
+        "input_data": task.input_data,
+        "output_data": task.output_data,
+        "tests": create_new_tests(task, tests_info),
+    }
+    return response

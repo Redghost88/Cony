@@ -8,7 +8,7 @@ from django.http import JsonResponse
 from django.utils.html import strip_tags
 from django.views.decorators.http import require_http_methods
 from main.ai_agent import chat
-from main.models import Theory, Task, Test
+from main.models import Theory, Task
 from main.prompts import (
     CHAT_SETTINGS,
     GENERATE_COURSE,
@@ -16,6 +16,7 @@ from main.prompts import (
     GENERATE_THEORY,
     GENERATE_TASK,
 )
+from main.utils import build_task_response
 
 logger = logging.getLogger(__name__)
 
@@ -80,47 +81,22 @@ def generate_tasks(request) -> JsonResponse:
         technology = request_body.get("technology")
         theory = Theory.objects.get(id=int(request_body.get("theory")))
         task = Task.objects.get(id=int(request_body.get("task")))
-
-        logger.info(
-            f"Генерация задачи: технология='{technology}', теория ID={theory.id}, задача ID={task.id}"
-        )
-
-        if task.is_generated:
-            Test.objects.filter(task=task).delete()
-            logger.debug(f"Удалены старые тесты для задачи ID={task.id}")
+        logger.info(f"Генерация задачи: задача ID={task.id}")
 
         question = GENERATE_TASK % (technology, theory.title, strip_tags(theory.text))
         answer = json.loads(chat(question))
         task_info = answer[0]
         tests_info = answer[1]
-        task.title = task_info["title"]
-        task.task_content = task_info["content"]
-        task.input_data = task_info["input_data"]
-        task.output_data = task_info["output_data"]
-        task.is_generated = True
-        task.save()
-        response = {
-            "task_title": task.title,
-            "task_text": task.task_content,
-            "input_data": task.input_data,
-            "output_data": task.output_data,
-            "tests": [],
-        }
-        tests = []
-        for i in range(len(tests_info)):
-            test = Test.objects.create(
-                task=task,
-                input_data=tests_info[i][0],
-                output_data=tests_info[i][1],
-                order=i,
-            )
-            tests.append(
-                {"input_data": test.input_data, "output_data": test.output_data}
-            )
-        response["tests"] = tests
+        task.update(
+            title=task_info["title"],
+            task_content=task_info["content"],
+            input_data=task_info["input_data"],
+            output_data=task_info["output_data"],
+            is_generated=True,
+        )
 
-        logger.info(f"Задача сгенерирована успешно: ID={task.id}, тестов={len(tests)}")
-        return JsonResponse(response)
+        logger.info(f"Задача сгенерирована успешно: ID={task.id}")
+        return JsonResponse(build_task_response(task, tests_info))
     except Exception as e:
         logger.error(f"Ошибка при генерации задач: {e}")
         return JsonResponse({"error": str(e)}, status=500)
