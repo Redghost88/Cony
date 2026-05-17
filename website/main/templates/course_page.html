@@ -21,7 +21,7 @@
         {% for item in chapters %}
         <div>
             <div class="d-grid gap-2">
-                <a href="{% url 'course_page' course_id=course.id chapter_id=item.order task_id=item.current_theory_number %}"
+                <a href="{% url 'course_page' course_id=course.id chapter_id=item.order theory_id=item.current_theory_number %}"
                    class="menu-item btn btn-outline-primary">
                     {{ forloop.counter }}. {{ item.title }}
                 </a>
@@ -30,7 +30,7 @@
                 {% if item == chapter %}
                 {% if theory_blocks %}
                 {% for t in theory_blocks %}
-                <a href="{% url 'course_page' course_id=course.id chapter_id=item.order task_id=t.order %}"
+                <a href="{% url 'course_page' course_id=course.id chapter_id=item.order theory_id=t.order %}"
                    class="btn">
                     {{ forloop.parentloop.counter }}.{{ forloop.counter }} {{ t.title }}
                 </a>

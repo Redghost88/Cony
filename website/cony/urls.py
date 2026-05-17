@@ -32,7 +32,7 @@ urlpatterns = [
     path("logout/", auth_views.user_logout),
     path("registration/", auth_views.registration, name="registration"),
     path(
-        "course/<int:course_id>/chapter/<int:chapter_id>/task/<int:task_id>",
+        "course/<int:course_id>/chapter/<int:chapter_id>/task/<int:theory_id>",
         course_views.course_page,
         name="course_page",
     ),

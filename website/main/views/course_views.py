@@ -74,24 +74,24 @@ def create_course(request):
 
 
 @login_required
-def course_page(request, course_id, chapter_id, task_id):
+def course_page(request, course_id, chapter_id, theory_id):
     """Отображает страницу урока: теорию, задачу, тесты и историю попыток."""
-    logger.info(f"Страница курса запрошена: курс={course_id}, глава={chapter_id}, задача={task_id}")
+    logger.info(f"Страница курса запрошена: курс={course_id}, глава={chapter_id}, теория={theory_id}")
     course = get_object_or_404(Course, id=course_id)
     course.current_chapter_number = chapter_id
     course.save(update_fields=["current_chapter_number"])
 
     chapters = Chapter.objects.filter(course=course).order_by("order")
     chapter = Chapter.objects.get(course=course, order=chapter_id)
-    chapter.current_task_number = task_id
-    chapter.save(update_fields=["current_task_number"])
+    chapter.current_theory_number = theory_id
+    chapter.save(update_fields=["current_theory_number"])
 
-    clean_duplicate_theories(chapter, task_id)
+    clean_duplicate_theories(chapter, theory_id)
 
     theory = None
     theory_blocks = Theory.objects.filter(chapter=chapter)
     if theory_blocks:
-        theory = Theory.objects.get(chapter=chapter, order=task_id)
+        theory = Theory.objects.get(chapter=chapter, order=theory_id)
 
     task, tests, attempts, last_attempt = _get_lesson_data(theory, request.user)
 
@@ -176,5 +176,5 @@ def add_new_theory(request):
         "course_page",
         course_id=course_id,
         chapter_id=chapter.order,
-        task_id=chapter.current_theory_number,
+        theory_id=chapter.current_theory_number,
     )
