@@ -82,7 +82,7 @@ class TestProfileViews:
         """Просмотр чужого профиля"""
         UserStats.objects.create(user=user)
         other = User.objects.create_user("other", password="pass")
-        response = authenticated_client.get(reverse("profile", args=["other"]))
+        response = authenticated_client.get(reverse("profile", args=[other.username]))
         assert response.status_code == 200
 
     def test_profile_update_success(self, authenticated_client, user):
@@ -139,7 +139,9 @@ class TestExecutionViews:
         assert "output" in response.json() or "error" in response.json()
 
     @patch("main.views.execution_views.send_attempt.delay")
-    def test_check_code_post_authenticated(self, mock_send_attempt, authenticated_client, task):
+    def test_check_code_post_authenticated(
+        self, mock_send_attempt, authenticated_client, task
+    ):
         """Создание попытки"""
         import json
 

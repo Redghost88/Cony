@@ -1,8 +1,7 @@
 """
 Файл настроек для тестов
 """
-
-from .settings import *
+from .settings import *  # noqa: F401, F403
 
 DATABASES = {
     "default": {

@@ -104,6 +104,7 @@ def theory(db, chapter):
 def task(db, theory, user):
     return TaskFactory.create(theory=theory, user=user)
 
+
 @pytest.fixture
 def attempt(db, task, user):
     """Создает тестовую попытку решения задачи"""
@@ -112,5 +113,5 @@ def attempt(db, task, user):
         user=user,
         source_code="print('hello')",
         status="pending",
-        passed=False
+        passed=False,
     )
