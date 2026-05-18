@@ -6,7 +6,8 @@ from datetime import datetime
 
 from celery import shared_task
 from main.models import Attempt, Course, UserStats
-from main.code_checker import check_attempt, run_in_docker
+from main.code_checker import check_attempt
+from main.strategies.code_execution import run_in_docker
 from main.utils import is_yesterday, update_course_progress
 
 
@@ -36,13 +37,13 @@ def send_attempt(self, attempt_id, course_id):
         attempt.status = "finished"
         attempt.save(update_fields=["status"])
         return attempt.passed
-    except Exception as e:
+    except Exception as exc:  # pylint: disable=broad-exception-caught
         attempt.status = "error"
-        attempt.save(update_fields="status")
-        self.retry(exc=e)
+        attempt.save(update_fields=["status"])
+        raise self.retry(exc=exc) from exc
 
 
 @shared_task(ignore_result=False)
-def test_user_code(code: str, stdin: str, timeout: float = 5.0):
+def test_user_code(code: str, stdin: str, timeout: float = 5.0, lang: str = "python"):
     """Асинхронная задача для теста кода пользователем."""
-    return run_in_docker(code, stdin, timeout)
+    return run_in_docker(code, stdin, timeout, lang=lang)

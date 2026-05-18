@@ -1,0 +1,12 @@
+[run]
+omit =
+    */asgi.py
+    */wsgi.py
+    */celery.py
+    */manage.py
+    */migrations/*
+    */settings*.py
+
+[report]
+exclude_lines =
+    pragma: no cover

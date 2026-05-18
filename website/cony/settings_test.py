@@ -1,6 +1,8 @@
 """
 Файл настроек для тестов
 """
+
+# pylint: disable=wildcard-import,unused-wildcard-import
 from .settings import *  # noqa: F401, F403
 
 DATABASES = {

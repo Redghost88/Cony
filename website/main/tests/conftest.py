@@ -15,6 +15,7 @@ from cony import settings
 class UserFactory(DjangoModelFactory):
     class Meta:
         model = User
+        skip_postgeneration_save = True
 
     username = Sequence(lambda n: f"testuser{n}")
     email = Faker("email")
@@ -25,6 +26,7 @@ class UserFactory(DjangoModelFactory):
             return
         raw_password = extracted or "testpass123"
         self.set_password(raw_password)
+        self.save()
 
 
 class CourseFactory(DjangoModelFactory):

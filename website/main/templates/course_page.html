@@ -196,7 +196,8 @@
                     headers: {"Content-Type": "application/json", "X-CSRFToken": csrf_token.getAttribute("content")},
                     body: JSON.stringify({
                         "code": editor.getValue(),
-                        "input_data": code_test_input.value
+                        "input_data": code_test_input.value,
+                        "language": "{{ course.technology }}"
                     })
                 },
         )

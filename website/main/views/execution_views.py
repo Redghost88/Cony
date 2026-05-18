@@ -7,6 +7,7 @@ import logging
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from main.models import Task, Attempt
+from main.strategies.code_execution import resolve_language
 from main.tasks import send_attempt, test_user_code
 
 logger = logging.getLogger(__name__)
@@ -15,13 +16,13 @@ logger = logging.getLogger(__name__)
 @require_http_methods(["POST"])
 def run_code(request):
     """
-    Выполняет пользовательский Python-код в изолированном Docker-контейнере.
+    Выполняет пользовательский код в изолированном Docker-контейнере.
 
     Принимает код и входные данные, запускает асинхронную задачу Celery
     и ожидает результат выполнения.
 
     Args:
-        request (HttpRequest): POST-запрос с JSON: {'code': str, 'input_data': str}.
+        request (HttpRequest): POST-запрос с JSON: {'code': str, 'input_data': str, 'language': str}.
 
     Returns:
         JsonResponse: {'output': str} при успехе или {'error': str} при ошибке.
@@ -31,13 +32,15 @@ def run_code(request):
         request_body = json.loads(request.body)
         code = request_body.get("code")
         input_data = request_body.get("input_data")
+        language = resolve_language(request_body.get("language", "python"))
         code_timeout = 2
         logger.debug(
-            f"Выполнение кода: длина кода={len(code)}, входные данные='{input_data[:100] if input_data else 'нет'}'"
+            f"Выполнение кода: язык={language}, длина кода={len(code)}, "
+            f"входные данные='{input_data[:100] if input_data else 'нет'}'"
         )
 
         async_result = test_user_code.apply_async(
-            args=[code, input_data, code_timeout]
+            args=[code, input_data, code_timeout, language]
         ).get(timeout=code_timeout)
 
         if async_result["stdout"]:

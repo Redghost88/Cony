@@ -1,3 +1,5 @@
+"""Конфигурация Celery для асинхронных задач проекта."""
+
 import os
 from celery import Celery
 

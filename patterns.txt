@@ -13,3 +13,20 @@
 
 обоснование: вместо захардкоженых значений промптов внутри функций выполняющих логику приложения,
 все такие промпты вынесены в отдельный файл в виде констант
+
+
+3)Strategy (стратегия)
+
+применяется в:
+  — website/main/strategies/code_execution.py — реализация паттерна
+  — website/main/code_checker.py — проверка посылок (check_attempt)
+  — website/main/tasks.py — асинхронный запуск кода (test_user_code)
+  — website/main/views/execution_views.py — выбор языка при ручном запуске кода (resolve_language)
+
+обоснование:
+  Запуск пользовательского кода зависит от языка (образ, расширение файла, g++ vs python).
+  Без Strategy эта логика размазывалась бы по if/elif в check_attempt, tasks и views.
+  Паттерн отделяет «как проверять посылку» от «как именно выполнить код на языке X»:
+  check_attempt работает только с execution.run(...), а добавление нового языка сводится
+  к новой записи DockerLangConfig + CodeExecutionStrategy в _STRATEGIES.
+  В тестах стратегию можно подставить через параметр strategy в check_attempt (мок без Docker).
