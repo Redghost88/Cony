@@ -56,8 +56,6 @@ services:
     restart: unless-stopped
     networks:
       - cony_network
-    expose:
-      - 80
     ports:
       - "80:80"
       - "443:443"

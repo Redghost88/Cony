@@ -1,31 +1,99 @@
 {% extends "base.html" %}
-
-{% block title %}
-Главная страница
-{% endblock %}
-
+{% block title %}Главная страница{% endblock %}
 {% block content %}
-<a href="{% url 'create_course' %}" class="btn btn-primary btn-sm"> Создать курс </a>
-<div class="row row-cols-1 row-cols-lg-3">
-    {% for course in courses %}
-    <div class="col-md-6 mb-3">
-        <div class="text-block">
-            <div class="card-body">
-                <h5 class="card-title">{{ course.0.title }}</h5>
-                <div class="small mb-3">
-                    Создал: {{ course.0.author }} | {{ course.0.created_at }}
-                    <div class="stats">
-                        {{ course.0.progress }}%
-                        <progress class="progress-bar" value="{{ course.0.progress }}" max="100"></progress>
+<div>
+    <a href="{% url 'create_course' %}" class="btn btn-primary btn-sm">
+        Создать курс
+    </a>
+
+    {% if request.user.is_authenticated %}
+    <h2>Мои курсы</h2>
+    <div class="row row-cols-1 row-cols-lg-3">
+        {% for course in courses %}
+        {% if course.0.author == request.user%}
+        <div class="col-md-6 mb-3">
+            <div class="text-block">
+                <div class="card-body">
+                    <h5 class="card-title">{{ course.0.title }} id{{ course.0.id }}</h5>
+                    <div class="small mb-3">
+                        Создал: {{ course.0.author }} | {{ course.0.created_at }}
+                        <div class="stats">
+                            {{ course.0.progress }}%
+                            <progress class="progress-bar" value="{{ course.0.progress }}" max="100"></progress>
+                        </div>
                     </div>
+                    <a href="/course/{{ course.0.id }}/chapter/{{ course.1 }}/task/{{ course.2 }}"
+                        class="btn btn-primary btn-sm">
+                        Перейти к курсу
+                    </a>
                 </div>
-                <a href="/course/{{ course.0.id }}/chapter/{{ course.1 }}/task/{{ course.2 }}"
-                   class="btn btn-primary btn-sm">
-                    Перейти к курсу
-                </a>
             </div>
         </div>
+        {% endif %}
+        {% empty %}
+        <p class="text-gray-500 col-span-full py-4">
+            У вас пока нет созданных курсов.
+        </p>
+        {% endfor %}
     </div>
-    {% endfor %}
-</div>
+    {% endif %}
+
+    <section>
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-4">
+            <h2 class="text-2xl font-bold text-gray-800">Все курсы</h2>
+
+            <form method="GET" action="" class="w-full sm:w-auto flex gap-2">
+                <input type="text" name="search" id="searchInput" placeholder="Поиск по названию или ID..."
+                    class="w-full sm:w-64 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value="{{ request.GET.search }}">
+            </form>
+        </div>
+
+        <div class="row row-cols-1 row-cols-lg-3" id="all-courses-list">
+            {% for course in courses %}
+            <div class="col-md-6 mb-3 course-wrapper" 
+                 data-title="{{ course.0.title|lower }}" 
+                 data-id="{{ course.0.id }}">
+                <div class="text-block">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ course.0.title }} id{{ course.0.id }}</h5>
+                        <div class="small mb-3">
+                            Создал: {{ course.0.author }} | {{ course.0.created_at }}
+                            <div class="stats">
+                                {{ course.0.progress }}%
+                                <progress class="progress-bar" value="{{ course.0.progress }}" max="100"></progress>
+                            </div>
+                        </div>
+                        <a href="/course/{{ course.0.id }}/chapter/{{ course.1 }}/task/{{ course.2 }}"
+                           class="btn btn-primary btn-sm">
+                            Перейти к курсу
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-gray-500 col-span-full py-4">Курсов пока нет.</p>
+            {% endfor %}
+        </div>
+    </section>
+{% endblock %}
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const input = document.getElementById("searchInput");
+        const wrappers = document.querySelectorAll("#all-courses-list .course-wrapper");
+        if (!input) return;
+
+        input.addEventListener("input", (e) => {
+            const q = e.target.value.toLowerCase().trim();
+            wrappers.forEach((el) => {
+                const title = el.dataset.title || "";
+                const id = el.dataset.id || "";
+                
+                const isVisible = title.includes(q) || id.includes(q);
+                el.style.display = isVisible ? "" : "none";
+            });
+        });
+    });
+</script>
 {% endblock %}

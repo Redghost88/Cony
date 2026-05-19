@@ -1,9 +1,4 @@
-"""
-Стратегии запуска пользовательского кода в Docker для разных языков.
-"""
-
 from __future__ import annotations
-
 import os
 import subprocess
 import tempfile
@@ -39,16 +34,13 @@ class CodeExecutionStrategy:
     """Стратегия запуска кода в изолированном Docker-контейнере."""
 
     def __init__(self, config: DockerLangConfig) -> None:
-        """Создаёт стратегию с конфигурацией выбранного языка."""
         self._config = config
 
     @property
     def lang_id(self) -> str:
-        """Идентификатор языка (python, cpp и т.д.)."""
         return self._config.lang_id
 
     def run(self, code: str, stdin: str, timeout: float = 2.0) -> RunResult:
-        """Запускает код в Docker и возвращает stdout, stderr и код выхода."""
         return _run_in_docker(self._config, code, stdin, timeout)
 
 
@@ -58,12 +50,11 @@ _PYTHON = DockerLangConfig(
     image="python:3.12-slim",
     cmd=("python", "solution.py"),
 )
-
 _CPP = DockerLangConfig(
     lang_id="cpp",
     filename="solution.cpp",
     image="gcc:12-slim",
-    cmd=("bash", "-c", "g++ solution.cpp -o sol && ./sol"),
+    cmd=("bash", "-c", "g++ solution.cpp -o /tmp/sol && /tmp/sol"),
 )
 
 _STRATEGIES: dict[str, CodeExecutionStrategy] = {
@@ -82,46 +73,36 @@ _TECHNOLOGY_ALIASES: dict[str, str] = {
 }
 
 
-def resolve_language(technology: str = "") -> str:
+def resolve_language(_technology: str = "") -> str:
     """Сопоставляет название технологии курса с идентификатором стратегии."""
-    key = (technology or "").strip().lower()
-    if key in _STRATEGIES:
-        return key
+    key = (_technology or "").strip().lower()
     return _TECHNOLOGY_ALIASES.get(key, "python")
 
 
 def get_execution_strategy(lang: str) -> CodeExecutionStrategy:
-    """Возвращает стратегию выполнения для указанного языка или технологии."""
+    """Возвращает стратегию выполнения для указанного языка."""
     lang_id = resolve_language(lang)
     try:
-        return _STRATEGIES[lang_id]
+        return _STRATEGIES[lang_id.strip()]
     except KeyError as exc:
-        raise ValueError(f"Unsupported language: {lang}") from exc
+        raise ValueError(f"Unsupported language: '{lang_id}'") from exc
 
 
 def run_in_docker(
-    code: str,
-    stdin: str,
-    timeout: float = 2.0,
-    lang: str = "python",
+    code: str, stdin: str, timeout: float = 2.0, lang: str = "python"
 ) -> RunResult:
-    """Запускает код через стратегию выбранного языка."""
+    """Публичный API: запускает код через стратегию выбранного языка."""
     return get_execution_strategy(lang).run(code, stdin, timeout)
 
 
 def _write_solution_file(directory: str, filename: str, code: str) -> None:
-    """Записывает исходный код во временный каталог для монтирования в контейнер."""
-    code_path = os.path.join(directory, filename)
-    with open(code_path, "w", encoding="utf-8") as f:
+    with open(os.path.join(directory, filename), "w", encoding="utf-8") as f:
         f.write(code)
 
 
 def _build_docker_run_command(
-    config: DockerLangConfig,
-    host_dir: str,
-    container_name: str,
+    config: DockerLangConfig, host_dir: str, container_name: str
 ) -> list[str]:
-    """Формирует команду docker run с ограничениями безопасности и ресурсов."""
     return [
         "docker",
         "run",
@@ -152,41 +133,21 @@ def _build_docker_run_command(
     ]
 
 
-def _success_result(proc: subprocess.CompletedProcess[bytes]) -> RunResult:
-    """Преобразует успешный завершённый процесс Docker в RunResult."""
-    return {
-        "stdout": proc.stdout.decode("utf-8", errors="ignore").strip(),
-        "stderr": proc.stderr.decode("utf-8", errors="ignore").strip(),
-        "exit_code": proc.returncode,
-        "timed_out": False,
-    }
-
-
-def _stop_container(container_name: str) -> None:
-    """Принудительно останавливает контейнер при превышении лимита времени."""
-    subprocess.run(
+def _cleanup_container(container_name: str) -> None:
+    """Идемпотентная очистка: не падает, если контейнер уже удалён."""
+    for cmd in [
         ["docker", "stop", "-t", "1", container_name],
-        capture_output=True,
-        check=True,
-    )
-
-
-def _remove_container(container_name: str) -> None:
-    """Удаляет контейнер, если он ещё существует."""
-    subprocess.run(
         ["docker", "rm", "-f", container_name],
-        capture_output=True,
-        check=True,
-    )
+    ]:
+        try:
+            subprocess.run(cmd, capture_output=True, timeout=2)
+        except Exception:
+            pass
 
 
 def _execute_container(
-    cmd: list[str],
-    stdin: str,
-    timeout: float,
-    container_name: str,
+    cmd: list[str], stdin: str, timeout: float, container_name: str
 ) -> RunResult:
-    """Запускает контейнер и обрабатывает успех, таймаут или ошибку Docker."""
     try:
         proc = subprocess.run(
             cmd,
@@ -196,35 +157,34 @@ def _execute_container(
             timeout=timeout + DOCKER_STARTUP_BUFFER,
             check=True,
         )
-        return _success_result(proc)
+        return {
+            "stdout": proc.stdout.decode("utf-8", errors="ignore").strip(),
+            "stderr": proc.stderr.decode("utf-8", errors="ignore").strip(),
+            "exit_code": proc.returncode,
+            "timed_out": False,
+        }
     except subprocess.TimeoutExpired:
-        _stop_container(container_name)
+        _cleanup_container(container_name)
         return {
             "stdout": "",
             "stderr": "Time Limit Exceeded",
             "exit_code": 124,
             "timed_out": True,
         }
-    except (OSError, subprocess.SubprocessError, ValueError) as exc:
+    except Exception as exc:
+        _cleanup_container(container_name)
         return {
             "stdout": "",
             "stderr": f"Docker error: {exc}",
             "exit_code": -1,
             "timed_out": False,
         }
-    finally:
-        _remove_container(container_name)
 
 
 def _run_in_docker(
-    config: DockerLangConfig,
-    code: str,
-    stdin: str,
-    timeout: float,
+    config: DockerLangConfig, code: str, stdin: str, timeout: float
 ) -> RunResult:
-    """Запускает пользовательский код в Docker по конфигурации языка."""
     container_name = f"check_{uuid.uuid4().hex[:8]}"
-
     with tempfile.TemporaryDirectory() as tmp_dir:
         _write_solution_file(tmp_dir, config.filename, code)
         cmd = _build_docker_run_command(config, tmp_dir, container_name)
