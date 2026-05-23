@@ -16,6 +16,9 @@
                 <div class="card-body">
                     <h5 class="card-title">{{ course.0.title }}</h5>
                     <span class="badge text-bg-secondary">id - {{ course.0.id }}</span>
+                    {% if course.0.wish %}
+                    <span class="badge text-bg-info">wish - {{ course.0.wish }}</span>
+                    {% endif %}
                     <div class="small mb-3">
                         {{ course.0.created_at }}
                         <div class="stats">
@@ -64,6 +67,9 @@
                     <div class="card-body">
                         <h5 class="card-title">{{ course.0.title }}</h5>
                         <span class="badge text-bg-secondary">id - {{ course.0.id }}</span>
+                        {% if course.0.wish %}
+                        <span class="badge text-bg-info">wish - {{ course.0.wish }}</span>
+                        {% endif %}
                         <div class="small mb-3">
                             Создал: {{ course.0.author }} | {{ course.0.created_at }}
                             <div class="stats">

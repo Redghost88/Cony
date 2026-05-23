@@ -22,7 +22,7 @@ from main.utils import build_task_response
 logger = logging.getLogger(__name__)
 
 
-def generate_theory(chapter_name: str, technology: str) -> list:
+def generate_theory(chapter_name: str, technology: str, wish="") -> list:
     """
     Генерирует структурированный учебный контент с использованием AI.
 
@@ -47,6 +47,8 @@ def generate_theory(chapter_name: str, technology: str) -> list:
         + ", Название технологии:"
         + technology
     )
+    if wish:
+        question += "Пожелания:" + wish
     try:
         answer = chat(question)
         match = re.search(r"```(?:json)?\s*(.*?)\s*```", answer, re.DOTALL)
@@ -82,11 +84,12 @@ def generate_tasks(request) -> JsonResponse:
     try:
         request_body = json.loads(request.body)
         technology = request_body.get("technology")
+        wish = request_body.get("wish")
         theory = Theory.objects.get(id=int(request_body.get("theory")))
         task = Task.objects.get(id=int(request_body.get("task")))
         logger.info(f"Генерация задачи: задача ID={task.id}")
 
-        question = GENERATE_TASK % (technology, theory.title, strip_tags(theory.text))
+        question = GENERATE_TASK % (technology, theory.title, strip_tags(theory.text), wish)
         answer = json.loads(chat(question))
         task_info = answer[0]
         tests_info = answer[1]

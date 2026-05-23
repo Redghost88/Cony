@@ -29,6 +29,7 @@ class Course(models.Model):
     current_chapter_number = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     private = models.BooleanField(default=True)
+    wish = models.CharField(max_length=256, default="")
 
     def __str__(self):
         "Выводит название"

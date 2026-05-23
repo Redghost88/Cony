@@ -88,12 +88,6 @@
                 course_request += `Изученые темы: ${learnedThemes}. `
             }
 
-            let wishes = task_wishes.value.trim();
-            if (learnedThemes !== "") {
-                course_request += `Тема для задач: ${wishes}`
-            }
-            
-
             generateCourse(course_request)
             course_preview.innerHTML = `
         <div class="spinner-grow" role="status">
@@ -119,8 +113,10 @@
             answer = JSON.parse(answer)
             let titles = answer.map(item => item.title)
             course_title = titles[0]
+            let wishes = task_wishes.value.trim();
             course_preview.innerHTML += `<h1>${course_title}</h1>
-            <input type="hidden" name="course_title" value="${course_title}">`
+            <input type="hidden" name="course_title" value="${course_title}">
+            <input type="hidden" name="wishes" value="${wishes}">`
             chapters = titles.slice(1)
             chapters.forEach(chapter => {
                 if (chapter != "") {

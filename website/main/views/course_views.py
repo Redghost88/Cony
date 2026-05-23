@@ -58,11 +58,12 @@ def create_course(request):
             author=request.user,
             title=request.POST.get("course_title"),
             technology=request.POST.get("technology"),
+            wish=request.POST.get("wishes"),
         )
 
         course.create_chapters(request.POST.getlist("chapter_name"))
         chapter1 = Chapter.objects.get(course=course, order=0)
-        theory_blocks = generate_theory(chapter1.title, course.technology)
+        theory_blocks = generate_theory(chapter1.title, course.technology, course.wish)
         chapter1.create_theories(theory_blocks)
 
         logger.info(
@@ -171,7 +172,7 @@ def add_new_theory(request):
         f"Добавление теории: глава ID={chapter_id} '{chapter.title}', курс ID={course_id} '{course.title}'"
     )
 
-    theory_blocks = generate_theory(chapter.title, course.technology)
+    theory_blocks = generate_theory(chapter.title, course.technology, course.wish)
     chapter.create_theories(theory_blocks)
 
     logger.info(f"Теория добавлена: блоков={len(theory_blocks)}, глава={chapter.title}")
@@ -203,9 +204,9 @@ def change_privacy(request, course_id):
 @login_required
 def practice(request):
     """Переходит на страницу практики"""
-    if not Task.objects.filter(user=request.user, decided=False).exists():
+    if not Task.objects.filter(user=request.user, decided=False).exclude(task_content="").exists():
         return render(request, "practice.html", {"error": "У вас еще нет задач"})
-    task_ids = Task.objects.filter(user=request.user, decided=False).values_list(
+    task_ids = Task.objects.filter(user=request.user, decided=False).exclude(task_content="").values_list(
         "id", flat=True
     )
     random_id = random.choice(task_ids)
