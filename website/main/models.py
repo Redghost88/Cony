@@ -28,7 +28,6 @@ class Course(models.Model):
     progress = models.PositiveSmallIntegerField(default=0)
     current_chapter_number = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
-    likes = models.IntegerField(default=0)
     private = models.BooleanField(default=True)
 
     def __str__(self):
