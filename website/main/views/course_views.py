@@ -197,3 +197,7 @@ def change_privacy(request, course_id):
         course.private = not course.private
         course.save(update_fields=["private"])
     return redirect("home")
+
+def practice(request):
+    """Переходит на страницу практики"""
+    return render(request, 'practice.html')
