@@ -5,13 +5,13 @@
 STYLE_RULES = """
 **Требования к стилизации для темной темы (ОБЯЗАТЕЛЬНО):**
 
-- Используй ТОЛЬКО темные фоны: `bg-dark`, `bg-black`, `bg-transparent`
-- Используй ТОЛЬКО светлые цвета текста: `text-white`, `text-light`, `text-white-50`
-- НИКОГДА не используй: `bg-light`, `bg-white`, `bg-secondary`, `alert-light`, `card-white`
-- Для блоков кода используй `bg-black text-light p-3 rounded`
-- Для карточек используй: `card bg-dark text-white border-secondary`
-- Добавляй класс `text-white` к основным контейнерам
-- Используй Bootstrap темные утилиты: `bg-dark`, `text-light`, `border-dark`"""
+- Используй ТОЛЬКО светлые фоны: `bg-dark`, `bg-black`, `bg-transparent`, `bg-white`, `bg-light`
+- Используй ТОЛЬКО темные цвета текста: `text-black`, `text-dark`, `text-black-50`
+- НИКОГДА не используй: `bg-dark`, `bg-black`, `bg-secondary`, `alert-black`, `card-black`
+- Для блоков кода используй `bg-black text-light rounded`
+- Для карточек используй: `card bg-light text-dark border-secondary`
+- Добавляй класс `text-black` к основным контейнерам
+- Используй Bootstrap светлые утилиты: `bg-light`, `text-dark`, `border-light`"""
 
 GENERATE_THEORY = """
 Ты - профессиональный преподаватель и эксперт по созданию учебных материалов по программированию.
