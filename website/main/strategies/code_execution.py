@@ -96,40 +96,32 @@ def run_in_docker(
 
 
 def _write_solution_file(directory: str, filename: str, code: str) -> None:
-    with open(os.path.join(directory, filename), "w", encoding="utf-8") as f:
+    path = os.path.join(directory, filename)
+    with open(path, "w", encoding="utf-8") as f:
         f.write(code)
+    os.chmod(directory, 0o755)
+    os.chmod(path, 0o644)
+
+    try:
+        os.chown(path, 1000, 1000)
+        os.chown(directory, 1000, 1000)
+    except PermissionError:
+        os.chmod(directory, 0o777)
+        os.chmod(path, 0o666)
 
 
 def _build_docker_run_command(
     config: DockerLangConfig, host_dir: str, container_name: str
 ) -> list[str]:
     return [
-        "docker",
-        "run",
-        "--name",
-        container_name,
-        "--network=none",
-        "--read-only",
-        "--tmpfs",
-        "/tmp:rw,size=64m,mode=755",
-        "--memory",
-        MEMORY_LIMIT,
-        "--pids-limit",
-        PIDS_LIMIT,
-        "--cap-drop",
-        "ALL",
-        "--security-opt",
-        "no-new-privileges:true",
-        "--user",
-        "1000:1000",
-        "--rm",
-        "-v",
-        f"{host_dir}:/app:ro",
-        "-w",
-        "/app",
-        "-i",
-        config.image,
-        *config.cmd,
+        "docker", "run", "--name", container_name,
+        "--network=none", "--read-only",
+        "--tmpfs", "/tmp:rw,size=64m,mode=755",
+        "--memory", MEMORY_LIMIT, "--pids-limit", PIDS_LIMIT,
+        "--cap-drop", "ALL", "--security-opt", "no-new-privileges:true",
+        "--user", "1000:1000", "--rm",
+        "-v", f"{host_dir}:/app:ro", "-w", "/app", "-i",
+        config.image, *config.cmd,
     ]
 
 
@@ -194,7 +186,5 @@ def _run_in_docker(
     container_name = f"check_{uuid.uuid4().hex[:8]}"
     with tempfile.TemporaryDirectory() as tmp_dir:
         _write_solution_file(tmp_dir, config.filename, code)
-        os.chmod(tmp_dir, 0o755)
-        os.chmod(os.path.join(tmp_dir, config.filename), 0o644)
         cmd = _build_docker_run_command(config, tmp_dir, container_name)
         return _execute_container(cmd, stdin, timeout, container_name)
