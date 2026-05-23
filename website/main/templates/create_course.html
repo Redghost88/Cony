@@ -78,15 +78,21 @@
                 }
             }
             let learnedThemes = ""
-            let cards = document.querySelectorAll(".card span")
+            let cards = document.querySelectorAll(".learn-technology-card-text")
             cards.forEach(card => {
                 learnedThemes += card.textContent + ","
             })
 
-            let course_request = `Название технологии:${technology.value}. Уровень погружения:${choosedLevel}. `
+            let course_request = `Название технологии: ${technology.value}. Уровень погружения: ${choosedLevel}. `
             if (learnedThemes !== "") {
-                course_request += `Изученые темы:${learnedThemes}. `
+                course_request += `Изученые темы: ${learnedThemes}. `
             }
+
+            let wishes = task_wishes.value.trim();
+            if (learnedThemes !== "") {
+                course_request += `Тема для задач: ${wishes}`
+            }
+            
 
             generateCourse(course_request)
             course_preview.innerHTML = `
