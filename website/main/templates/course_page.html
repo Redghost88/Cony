@@ -22,7 +22,7 @@
         <div>
             <div class="d-grid gap-2">
                 <a href="{% url 'course_page' course_id=course.id chapter_id=item.order theory_id=item.current_theory_number %}"
-                   class="menu-item btn btn-outline-primary">
+                    class="menu-item btn btn-outline-primary">
                     {{ forloop.counter }}. {{ item.title }}
                 </a>
             </div>
@@ -31,7 +31,7 @@
                 {% if theory_blocks %}
                 {% for t in theory_blocks %}
                 <a href="{% url 'course_page' course_id=course.id chapter_id=item.order theory_id=t.order %}"
-                   class="btn">
+                    class="btn">
                     {{ forloop.parentloop.counter }}.{{ forloop.counter }} {{ t.title }}
                 </a>
                 {% endfor %}
@@ -56,16 +56,18 @@
                 <button type="submit" class="btn btn-primary">Сгенерировать задачу</button>
             </form>
             <br>
-            <h3 id="task-title"></h3>
-            <p id="task-text"></p>
-            <div class="text-block">
-                <div class="example-item">
-                    <h5>Формат ввода</h5>
-                    <p id="task-input"></p> <br>
-                    <h5>Формат вывода</h5>
-                    <p id="task-output"></p>
-                    <h5>Пример данных</h5>
-                    <p id="io-example"></p>
+            <div>
+                <h3 id="task-title"></h3>
+                <p id="task-text"></p>
+                <div class="text-block">
+                    <div class="example-item">
+                        <h5>Формат ввода</h5>
+                        <p id="task-input"></p> <br>
+                        <h5>Формат вывода</h5>
+                        <p id="task-output"></p>
+                        <h5>Пример данных</h5>
+                        <p id="io-example"></p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -107,7 +109,7 @@
             {% include "chat.html" %}
         </div>
     </div>
-    {% else %}
+    {% elif user == course.author %}
     <form method="post" action="/add_new_theory/">
         {% csrf_token %}
         <div style="display: none;">
@@ -116,6 +118,8 @@
         </div>
         <button class="btn btn-primary">Сгенерировать теорию</button>
     </form>
+    {% else %}
+    <h2>Упс. Автор курса еще не сгенирорвал теорию для этой главы😢</h2>
     {% endif %}
 </main>
 {% endblock %}
@@ -172,39 +176,39 @@
     function generate_task() {
         fetch("/generate_task/", {
             method: "POST",
-            headers: {"Content-Type": "application/json", "X-CSRFToken": csrf_token.getAttribute("content")},
+            headers: { "Content-Type": "application/json", "X-CSRFToken": csrf_token.getAttribute("content") },
             body: JSON.stringify({
                 "technology": "{{ course.technology }}",
                 "theory": "{{ theory.id }}",
                 "task": "{{ task.id }}"
             })
         })
-                .then(response => response.json())
-                .then(data => {
-                    console.log(data["task_text"])
-                    task_title.innerHTML = String(data["task_title"] || "")
-                    task_text_cont.innerHTML = String(data["task_text"] || "")
-                    task_input.innerHTML = String(data["input_data"] || "")
-                    task_output.innerHTML = String(data["output_data"] || "")
-                    task_io_example.innerHTML = String(data["tests"][0]["input_data"] + " | " + data["tests"][0]["output_data"] || "")
-                })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data["task_text"])
+                task_title.innerHTML = String(data["task_title"] || "")
+                task_text_cont.innerHTML = String(data["task_text"] || "")
+                task_input.innerHTML = String(data["input_data"] || "")
+                task_output.innerHTML = String(data["output_data"] || "")
+                task_io_example.innerHTML = String(data["tests"][0]["input_data"] + " | " + data["tests"][0]["output_data"] || "")
+            })
     }
 
     function run_code() {
         fetch("/run_code/", {
-                    method: "POST",
-                    headers: {"Content-Type": "application/json", "X-CSRFToken": csrf_token.getAttribute("content")},
-                    body: JSON.stringify({
-                        "code": editor.getValue(),
-                        "input_data": code_test_input.value,
-                        "language": "{{ course.technology }}"
-                    })
-                },
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-CSRFToken": csrf_token.getAttribute("content") },
+            body: JSON.stringify({
+                "code": editor.getValue(),
+                "input_data": code_test_input.value,
+                "language": "{{ course.technology }}"
+            })
+        },
         )
-                .then(response => response.json())
-                .then(data => {
-                    code_test_output.innerHTML = data.output
-                })
+            .then(response => response.json())
+            .then(data => {
+                code_test_output.innerHTML = data.output
+            })
     }
 
     function show_attemts(attemptsStr) {
@@ -215,7 +219,7 @@
 
         let index = attempts.length
         for (const a of attempts) {
-            if(a.status === 'running' || a.status === 'pending'){
+            if (a.status === 'running' || a.status === 'pending') {
                 getStatus(a.id)
             }
             const expandClass = (index == attempts.length) ? 'show' : ''
@@ -239,27 +243,27 @@
 
     function send_code() {
         fetch("/send_code/", {
-                    method: "POST",
-                    headers: {"Content-Type": "application/json", "X-CSRFToken": csrf_token.getAttribute("content")},
-                    body: JSON.stringify({
-                        "source_code": editor.getValue(),
-                        "task_id": "{{ task.id }}",
-                        "course_id": "{{ course.id }}"
-                    })
-                },
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-CSRFToken": csrf_token.getAttribute("content") },
+            body: JSON.stringify({
+                "source_code": editor.getValue(),
+                "task_id": "{{ task.id }}",
+                "course_id": "{{ course.id }}"
+            })
+        },
         )
-                .then(response => response.json())
-                .then(data => {
-                    console.log('send', data.attempts)
-                    show_attemts(data.attempts)
-                })
+            .then(response => response.json())
+            .then(data => {
+                console.log('send', data.attempts)
+                show_attemts(data.attempts)
+            })
     }
 
     function upgrade_solution() {
         const theory_text = '{{ theory.text|escapejs }}'
         const task_text = '{{ task.task_content|escapejs }}'
         let solution = ""
-        if('{{ last_attempt }}') {
+        if ('{{ last_attempt }}') {
             solution = '{{ last_attempt.source_code|escapejs }}'
         }
         const invisible_msg_text = `Мне дана теория ${theory_text}. У меня есть задача: ${task_text}. Я успешно решил задачу вот так: ${solution}. Напиши краткий ответ 100-200 слов`
@@ -275,18 +279,18 @@
             attempts++;
             try {
                 const res = await fetch(`/attempt_status/${attemptId}/`);
-                
+
                 const contentType = res.headers.get('content-type');
                 if (!res.ok || !contentType?.includes('application/json')) {
                     const text = await res.text();
                     console.error('Сервер вернул не JSON:', text.substring(0, 200));
-                    clearInterval(interval)  
+                    clearInterval(interval)
                     return;
                 }
 
                 const data = await res.json();
                 if (data.status === 'finished' || data.status === 'error') {
-                    clearInterval(interval)                    
+                    clearInterval(interval)
                     getAttempts()
                     return
                 }
@@ -295,7 +299,7 @@
             }
 
             if (attempts >= maxAttempts) {
-                clearInterval(interval)  
+                clearInterval(interval)
                 console.error(`Too many attempts to get status ${attemptId}`);
             }
         }, 1500)

@@ -72,7 +72,7 @@ def use_sqlite_for_tests(db):
     """Переключает БД на SQLite только для тестов"""
     settings.DATABASES["default"] = {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": ":memory:",  # или "test_db.sqlite3" для файловой БД
+        "NAME": ":memory:",
     }
 
 

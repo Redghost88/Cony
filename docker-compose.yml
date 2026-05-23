@@ -62,7 +62,7 @@ services:
     volumes:
       - ./website/logs:/app/logs
       - ./nginx/${HOST:-localhost}.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./website/main/static:/app/static:ro
+      - ./website/static:/app/static:ro
       - ./website/media:/app/media:ro
       - static_volume:/app/staticfiles:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro

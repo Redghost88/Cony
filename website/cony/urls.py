@@ -48,6 +48,8 @@ urlpatterns = [
         name="get_attempt_status",
     ),
     path("get_attempts/<int:task_id>/", execution_views.get_task_attempts),
+    path("delete/<int:course_id>", course_views.delete_course),
+    path("change_privacy/<int:course_id>", course_views.change_privacy),
 ]
 
 if settings.DEBUG:

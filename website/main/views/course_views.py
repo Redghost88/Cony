@@ -180,3 +180,20 @@ def add_new_theory(request):
         chapter_id=chapter.order,
         theory_id=chapter.current_theory_number,
     )
+
+
+def delete_course(request, course_id):
+    """Удаляет курс"""
+    course = Course.objects.get(id=course_id)
+    if request.user == course.author:
+        course.delete()
+    return redirect("home")
+
+
+def change_privacy(request, course_id):
+    """Удаляет курс"""
+    course = Course.objects.get(id=course_id)
+    if request.user == course.author:
+        course.private = not course.private
+        course.save(update_fields=["private"])
+    return redirect("home")

@@ -28,6 +28,8 @@ class Course(models.Model):
     progress = models.PositiveSmallIntegerField(default=0)
     current_chapter_number = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+    likes = models.IntegerField(default=0)
+    private = models.BooleanField(default=True)
 
     def __str__(self):
         "Выводит название"
@@ -142,8 +144,6 @@ class Test(models.Model):
 
     Поля:
         task (ForeignKey): Ссылка на задачу (Task), к которой относится данный тест.
-            Используется режим PROTECT, предотвращающий удаление задачи,
-            если к ней привязаны активные тесты.
         input_data (CharField): Входные аргументы или данные, которые будут
             переданы в стандартный поток ввода (stdin) проверяемой программы.
         output_data (CharField): Эталонный результат (строка), с которым
@@ -158,7 +158,7 @@ class Test(models.Model):
         Каждый объект представляет собой пару "Вход -> Ожидаемый выход".
     """
 
-    task = models.ForeignKey(Task, on_delete=models.PROTECT)
+    task = models.ForeignKey(Task, on_delete=models.CASCADE)
     input_data = models.CharField(max_length=1024, default="")
     output_data = models.CharField(max_length=1024, default="")
     correct = models.BooleanField(default=False)

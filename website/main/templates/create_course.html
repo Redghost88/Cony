@@ -8,8 +8,8 @@
         <h2>Генерация курса</h2>
         <form onsubmit="event.preventDefault(); createRequest()">
             <div class="input-group mb-3">
-                <label class="input-group-text bg-transparent text-light" for="chooseTechnology">Технология для изучения</label>
-                <input class="form-control bg-transparent text-light" type="text" id="chooseTechnology"
+                <label class="input-group-text bg-transparent text-dark" for="chooseTechnology">Технология для изучения</label>
+                <input class="form-control bg-transparent text-dark" type="text" id="chooseTechnology"
                        placeholder="Введите текст и нажмите Enter...">
             </div>
             Например: <button type="button" onclick="pasteTechnology('Python')" class="btn btn-primary">Python</button>
@@ -31,7 +31,7 @@
 
             <br><br>
             <h3>Что уже знаете о технологии</h3>
-            <input class="bg-transparent text-light" type="text" id="textInput"
+            <input class="bg-transparent text-dark" type="text" id="textInput"
                    placeholder="Введите текст и нажмите Enter...">
 
             <div class="learn-technology-cards-container" id="cardsContainer">
@@ -40,9 +40,9 @@
 
             <h3>Напишите о чем бы вы хотели задачи в курсе</h3>
             <i>*например ваш любимый сериал или персонажи</i>
-            <textarea id="task_wishes" class="form-control bg-transparent text-light"
+            <textarea id="task_wishes" class="form-control bg-transparent text-dark"
                       aria-label="With textarea"></textarea><br>
-            <button type="submit" class="btn btn-primary">Cгенерировать курс</button>
+            <button type="submit" id="generate_button" class="btn btn-primary">Cгенерировать курс</button>
         </form>
     </div>
 
@@ -59,8 +59,10 @@
         const technology = document.getElementById("chooseTechnology")
         const task_wishes = document.getElementById("task_wishes")
         const course_preview = document.getElementById("course_preview")
+        const generate_button = document.getElementById("generate_button")
 
         function createRequest() {
+
             if (!technology.value) {
                 alert("Пожалуйста, выберите технологию");
                 return;

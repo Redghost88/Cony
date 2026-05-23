@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Главная страница{% endblock %}
 {% block content %}
-<div>
+<div style="margin: 2%; min-height: 1500px;">
     <a href="{% url 'create_course' %}" class="btn btn-primary btn-sm">
         Создать курс
     </a>
@@ -14,9 +14,10 @@
         <div class="col-md-6 mb-3">
             <div class="text-block">
                 <div class="card-body">
-                    <h5 class="card-title">{{ course.0.title }} id{{ course.0.id }}</h5>
+                    <h5 class="card-title">{{ course.0.title }}</h5>
+                    <span class="badge text-bg-secondary">id - {{ course.0.id }}</span>
                     <div class="small mb-3">
-                        Создал: {{ course.0.author }} | {{ course.0.created_at }}
+                        {{ course.0.created_at }}
                         <div class="stats">
                             {{ course.0.progress }}%
                             <progress class="progress-bar" value="{{ course.0.progress }}" max="100"></progress>
@@ -26,6 +27,12 @@
                         class="btn btn-primary btn-sm">
                         Перейти к курсу
                     </a>
+                    <a class="btn btn-danger btn-sm" href="/delete/{{course.0.id}}">Удалить</a>
+                    {% if course.0.private %}
+                    <a class="btn btn-secondary btn-sm" href="/change_privacy/{{course.0.id}}">Приватный</a>
+                    {% else %}
+                    <a class="btn btn-outline-secondary btn-sm" href="/change_privacy/{{course.0.id}}">Публичный</a>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -43,20 +50,20 @@
             <h2 class="text-2xl font-bold text-gray-800">Все курсы</h2>
 
             <form method="GET" action="" class="w-full sm:w-auto flex gap-2">
-                <input type="text" name="search" id="searchInput" placeholder="Поиск по названию или ID..."
-                    class="w-full sm:w-64 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value="{{ request.GET.search }}">
+                <input type="text" class="search-input-modern" name="search" id="searchInput" placeholder="Поиск по названию или ID..." value="{{ request.GET.search }}">
             </form>
         </div>
 
         <div class="row row-cols-1 row-cols-lg-3" id="all-courses-list">
             {% for course in courses %}
+            {% if course.0.private == False %}
             <div class="col-md-6 mb-3 course-wrapper" 
                  data-title="{{ course.0.title|lower }}" 
                  data-id="{{ course.0.id }}">
                 <div class="text-block">
                     <div class="card-body">
-                        <h5 class="card-title">{{ course.0.title }} id{{ course.0.id }}</h5>
+                        <h5 class="card-title">{{ course.0.title }}</h5>
+                        <span class="badge text-bg-secondary">id - {{ course.0.id }}</span>
                         <div class="small mb-3">
                             Создал: {{ course.0.author }} | {{ course.0.created_at }}
                             <div class="stats">
@@ -71,6 +78,7 @@
                     </div>
                 </div>
             </div>
+            {% endif %}
             {% empty %}
             <p class="text-gray-500 col-span-full py-4">Курсов пока нет.</p>
             {% endfor %}

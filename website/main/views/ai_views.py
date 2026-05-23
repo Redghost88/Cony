@@ -4,6 +4,7 @@
 
 import json
 import logging
+import re
 from django.http import JsonResponse
 from django.utils.html import strip_tags
 from django.views.decorators.http import require_http_methods
@@ -48,7 +49,9 @@ def generate_theory(chapter_name: str, technology: str) -> list:
     )
     try:
         answer = chat(question)
-        result = json.loads(answer)
+        match = re.search(r"```(?:json)?\s*(.*?)\s*```", answer, re.DOTALL)
+        json_str = match.group(1).strip() if match else answer.strip()
+        result = json.loads(json_str)
         logger.info(f"Теория сгенерирована успешно: блоков={len(result)}")
         return result
     except json.JSONDecodeError as e:
@@ -87,13 +90,12 @@ def generate_tasks(request) -> JsonResponse:
         answer = json.loads(chat(question))
         task_info = answer[0]
         tests_info = answer[1]
-        task.update(
-            title=task_info["title"],
-            task_content=task_info["content"],
-            input_data=task_info["input_data"],
-            output_data=task_info["output_data"],
-            is_generated=True,
-        )
+        task.title = task_info["title"]
+        task.task_content = task_info["content"]
+        task.input_data = task_info["input_data"]
+        task.output_data = task_info["output_data"]
+        task.is_generated = True
+        task.save()
 
         logger.info(f"Задача сгенерирована успешно: ID={task.id}")
         return JsonResponse(build_task_response(task, tests_info))
