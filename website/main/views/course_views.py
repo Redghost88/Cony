@@ -4,6 +4,7 @@
 
 import json
 import logging
+import random
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -198,6 +199,25 @@ def change_privacy(request, course_id):
         course.save(update_fields=["private"])
     return redirect("home")
 
+
+@login_required
 def practice(request):
     """Переходит на страницу практики"""
-    return render(request, 'practice.html')
+    task_ids = Task.objects.filter(user=request.user, decided=False).values_list(
+        "id", flat=True
+    )
+    random_id = random.choice(task_ids)
+    random_task = Task.objects.get(id=random_id)
+    tests = Test.objects.filter(task=random_task)
+    attempts = Attempt.objects.filter(task=random_task)
+    last_attempt = attempts.first()
+    attempts = json.dumps(list(attempts[:5].values()), default=str)
+    logger.info(f"Загружена для практики задача {random_task.title}")
+
+    context = {
+        "task": random_task,
+        "tests": tests,
+        "attempts": attempts,
+        "last_attempt": last_attempt,
+    }
+    return render(request, "practice.html", context)

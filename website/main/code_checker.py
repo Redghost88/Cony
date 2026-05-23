@@ -30,7 +30,7 @@ def check_attempt(
 
     try:
         for t in Test.objects.filter(task=attempt.task):
-            t_timeout = 2.0
+            t_timeout = 5
             res = execution.run(attempt.source_code, t.input_data, timeout=t_timeout)
 
             out = res["stdout"]

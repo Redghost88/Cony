@@ -1,14 +1,239 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
-    {% load static %}
-    <img src="{% static 'static/images/practice_picture.png' %}">
-    <form action="authorization">
-        <button type="submit">Авторизироваться</button>
-    </form>
-</body>
-</html>
+{% extends "base.html" %}
+{% load static %}
+{% block title %}
+Практика
+{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/dracula.min.css">
+{% endblock %}
+{% block content %}
+<div style="margin: 2%">
+    <a href="{% url 'practice' %}" class="btn btn-primary btn-sm">
+        Дать другую задачу
+    </a>
+    <div class="row">
+        <div class="col">
+            <h3 id="task-title"></h3>
+            <p id="task-text"></p>
+            <div class="text-block">
+                <div class="example-item">
+                    <h5>Формат ввода</h5>
+                    <p id="task-input"></p> <br>
+                    <h5>Формат вывода</h5>
+                    <p id="task-output"></p>
+                    <h5>Пример данных</h5>
+                    <p id="io-example"></p>
+                </div>
+            </div>
+        </div>
+        <div class="text-block col">
+
+            <meta id="csrf-token" content="{{ csrf_token }}">
+            <textarea id="code-editor" name="code">{{ last_attempt.source_code }}</textarea>
+            <br>
+            <div class="row">
+                <div class="col">
+                    {% if task.task_content %}
+                    <form onsubmit="event.preventDefault(); send_code()">
+                        <button type="submit" class="btn btn-primary">▶ Отправить код</button>
+                    </form>
+                    <br>
+                    {% if last_attempt.passed %}
+                    <form onsubmit="event.preventDefault(); upgrade_solution()">
+                        <button type="submit" class="btn btn-success">✨ Улучшить код</button>
+                    </form>
+                    {% endif %}
+                    {% endif %}
+                </div>
+                <div class="col">
+                    <h5>Входные данные</h5>
+                    <textarea class="code-test-text-area" id="code-input"></textarea>
+                    <h5>Выходные данные</h5>
+                    <div class="code-test-text-area" id="code-output" disabled="disabled"></div>
+                    <br>
+                    <form onsubmit="event.preventDefault(); run_code()">
+                        <button type="submit" id="run-btn" class="btn btn-primary">Протестировать код</button>
+                        <br>
+                    </form>
+                </div>
+            </div>
+            <br>
+            <div class="accordion" id="attempt-results"></div>
+        </div>
+    </div>
+    <div class="text-block">
+        {% include "chat.html" %}
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/htmlmixed/htmlmixed.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/sql/sql.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closebrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/matchbrackets.min.js"></script>
+<script>
+    const GENERATE_TASKS = false
+
+    const task_title = document.getElementById("task-title")
+    const task_text_cont = document.getElementById("task-text")
+    const task_input = document.getElementById("task-input")
+    const task_output = document.getElementById("task-output")
+    const task_io_example = document.getElementById("io-example")
+    const csrf_token = document.getElementById("csrf-token")
+    const textarea = document.getElementById("code-editor")
+    const code_test_input = document.getElementById("code-input")
+    const code_test_output = document.getElementById("code-output")
+    const attempt_results = document.getElementById("attempt-results")
+    const editor = CodeMirror.fromTextArea(textarea, {
+        lineNumbers: true,
+        theme: 'dracula',
+        indentUnit: 4,
+        tabSize: 4,
+        lineWrapping: true,
+        gutters: ["CodeMirror-linenumbers"],
+        fixedGutter: true,
+        autoCloseBrackets: true,
+        matchBrackets: true,
+        mode: 'python',
+        viewportMargin: Infinity,
+    });
+    const task_generated = "{{ task.is_generated }}"
+
+
+    document.addEventListener("DOMContentLoaded", function () {
+        task_title.innerHTML = `{{ task.title|escapejs }}`
+        task_text_cont.innerHTML = `{{ task.task_content|escapejs }}`
+        task_input.innerHTML = `{{ task.input_data|escapejs }}`
+        task_output.innerHTML = `{{ task.output_data|escapejs }}`
+        task_io_example.innerHTML = `{{ tests.0.input_data|escapejs }} | {{ tests.0.output_data|escapejs }}`
+        show_attemts('{{ attempts|escapejs }}')
+        if (task_generated == "False" && GENERATE_TASKS) {
+            generate_task()
+        }
+    })
+
+    function run_code() {
+        fetch("/run_code/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-CSRFToken": csrf_token.getAttribute("content") },
+            body: JSON.stringify({
+                "code": editor.getValue(),
+                "input_data": code_test_input.value,
+                "language": "{{ course.technology }}"
+            })
+        },
+        )
+            .then(response => response.json())
+            .then(data => {
+                code_test_output.innerHTML = data.output
+            })
+    }
+
+    function show_attemts(attemptsStr) {
+        attempt_results.innerHTML = ''
+
+        const attempts = typeof attemptsStr === 'string' ? JSON.parse(attemptsStr) : attemptsStr
+        if (!Array.isArray(attempts)) return
+
+        let index = attempts.length
+        for (const a of attempts) {
+            if (a.status === 'running' || a.status === 'pending') {
+                getStatus(a.id)
+            }
+            const expandClass = (index == attempts.length) ? 'show' : ''
+            attempt_results.innerHTML += `<div class="accordion-item" style="width:650px">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapseOne${a.id}" aria-expanded="false" aria-controls="collapseOne">
+                                Посылка ${index--} ${a.status}
+                        </button>
+                    </h2>
+                    <div id="collapseOne${a.id}" class="accordion-collapse collapse ${expandClass}" data-bs-parent="#accordionExample">
+                        <div class="accordion-body">
+                            Время: ${a.created_at}
+                            <pre>${a.source_code}</pre>
+                            <pre>${a.check_log}</pre>
+                        </div>
+                    </div>
+                </div>`
+        }
+    }
+
+    function send_code() {
+        fetch("/send_code/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-CSRFToken": csrf_token.getAttribute("content") },
+            body: JSON.stringify({
+                "source_code": editor.getValue(),
+                "task_id": "{{ task.id }}",
+                "course_id": "{{ course.id }}"
+            })
+        },
+        )
+            .then(response => response.json())
+            .then(data => {
+                console.log('send', data.attempts)
+                show_attemts(data.attempts)
+            })
+    }
+
+    function upgrade_solution() {
+        const theory_text = '{{ theory.text|escapejs }}'
+        const task_text = '{{ task.task_content|escapejs }}'
+        let solution = ""
+        if ('{{ last_attempt }}') {
+            solution = '{{ last_attempt.source_code|escapejs }}'
+        }
+        const invisible_msg_text = `Мне дана теория ${theory_text}. У меня есть задача: ${task_text}. Я успешно решил задачу вот так: ${solution}. Напиши краткий ответ 100-200 слов`
+        const msg_text = "Как улучшить мое решение?"
+        sendMessage(msg_text, invisible_msg_text)
+    }
+
+    function getStatus(attemptId) {
+        let attempts = 0;
+        const maxAttempts = 10;
+
+        const interval = setInterval(async () => {
+            attempts++;
+            try {
+                const res = await fetch(`/attempt_status/${attemptId}/`);
+
+                const contentType = res.headers.get('content-type');
+                if (!res.ok || !contentType?.includes('application/json')) {
+                    const text = await res.text();
+                    console.error('Сервер вернул не JSON:', text.substring(0, 200));
+                    clearInterval(interval)
+                    return;
+                }
+
+                const data = await res.json();
+                if (data.status === 'finished' || data.status === 'error') {
+                    clearInterval(interval)
+                    getAttempts()
+                    return
+                }
+            } catch (eror) {
+                console.error('Polling error', eror);
+            }
+
+            if (attempts >= maxAttempts) {
+                clearInterval(interval)
+                console.error(`Too many attempts to get status ${attemptId}`);
+            }
+        }, 1500)
+    }
+
+    function getAttempts() {
+        fetch(`/get_attempts/{{ task.id }}/?t=${Date.now()}`)
+            .then(response => response.json())
+            .then(data => {
+                show_attemts(data.attempts)
+            })
+    }
+</script>
+{% endblock %}

@@ -155,12 +155,19 @@ def _execute_container(
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             timeout=timeout + DOCKER_STARTUP_BUFFER,
-            check=True,
+            check=False,
         )
+        if proc.returncode != 0:
+            return {
+                "stdout": proc.stdout.decode("utf-8", errors="ignore").strip(),
+                "stderr": proc.stderr.decode("utf-8", errors="ignore").strip(),
+                "exit_code": proc.returncode,
+                "timed_out": False,
+            }
         return {
             "stdout": proc.stdout.decode("utf-8", errors="ignore").strip(),
             "stderr": proc.stderr.decode("utf-8", errors="ignore").strip(),
-            "exit_code": proc.returncode,
+            "exit_code": 0,
             "timed_out": False,
         }
     except subprocess.TimeoutExpired:
