@@ -194,5 +194,7 @@ def _run_in_docker(
     container_name = f"check_{uuid.uuid4().hex[:8]}"
     with tempfile.TemporaryDirectory() as tmp_dir:
         _write_solution_file(tmp_dir, config.filename, code)
+        os.chmod(tmp_dir, 0o755)
+        os.chmod(os.path.join(tmp_dir, config.filename), 0o644)
         cmd = _build_docker_run_command(config, tmp_dir, container_name)
         return _execute_container(cmd, stdin, timeout, container_name)

@@ -203,6 +203,8 @@ def change_privacy(request, course_id):
 @login_required
 def practice(request):
     """Переходит на страницу практики"""
+    if not Task.objects.filter(user=request.user, decided=False).exists():
+        return render(request, "practice.html", {"error": "У вас еще нет задач"})
     task_ids = Task.objects.filter(user=request.user, decided=False).values_list(
         "id", flat=True
     )
