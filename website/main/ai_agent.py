@@ -26,7 +26,7 @@ def chat(massage: str) -> str:
 
     # First API call with reasoning
     response = client.chat.completions.create(
-        model="openai/gpt-oss-120b:free",
+        model="deepseek/deepseek-v4-flash",
         messages=[{"role": "user", "content": massage}],
     )
 
